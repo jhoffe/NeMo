@@ -45,6 +45,11 @@ except ImportError:
 
 
 class AlignmentPreservingInverseNormalizer:
+    """
+    Inverse Text Normalizer that preserves the word alignment.
+    It is used to convert the spoken text to written text and preserve the alignment between the input and output words.
+    """
+
     LOWER_CASED = INPUT_LOWER_CASED
     UPPER_CASED = INPUT_CASED
     GRAMMAR = "itn"
@@ -90,6 +95,7 @@ class AlignmentPreservingInverseNormalizer:
 
     def inverse_normalize_list(self, texts: list[str], params: dict) -> list[str]:
         """
+        Applies Inverse Text Normalization to the list of texts.
         Args:
             texts: (list[str]) list of input strings.
             params: (dict) dictionary of runtime parameters.
@@ -108,7 +114,7 @@ class AlignmentPreservingInverseNormalizer:
 
     def verbalize(self, tokens: list, sep: str) -> str | None:
         """
-        Verbalizes tagged text.
+        Appplies verbalization to the list of tokens.
         Args:
             tokens: (list) list of tokens
             sep: (str) word separator

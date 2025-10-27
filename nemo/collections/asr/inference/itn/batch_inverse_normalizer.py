@@ -86,6 +86,11 @@ def merge_punctuation_and_itn_tags(
 
 
 class BatchAlignmentPreservingInverseNormalizer:
+    """
+    Batch Alignment Preserving Inverse Text Normalizer. It is used to apply ITN to a batch of texts.
+    joblib.Parallel is used to parallelize the processing.
+    """
+
     def __init__(
         self,
         itn_model: AlignmentPreservingInverseNormalizer,
@@ -95,6 +100,7 @@ class BatchAlignmentPreservingInverseNormalizer:
         conf_aggregate_fn: Callable,
     ):
         """
+        Batch Alignment Preserving Inverse Text Normalizer. It is used to apply ITN to a batch of texts.
         Args:
             itn_model: (AlignmentPreservingInverseNormalizer) Alignment Preserving Inverse Text Normalizer
             sep: (str) Separator
@@ -112,7 +118,7 @@ class BatchAlignmentPreservingInverseNormalizer:
         self, asr_words: list[Word], pnc_words: list[Word], return_alignment: bool = False
     ) -> list[Word] | tuple[list[Word], list]:
         """
-        Apply Alignment Preserving Inverse Text Normalization
+        Apply Alignment Preserving Inverse Text Normalization.
         Args:
             asr_words: (list[Word]) List of ASR words
             pnc_words: (list[Word]) List of words with punctuation/capitalization
@@ -143,7 +149,7 @@ class BatchAlignmentPreservingInverseNormalizer:
         return_alignment: bool = False,
     ) -> list[list[Word]] | list[tuple]:
         """
-        Alignment Preserving Inverse Text Normalization
+        Batch Alignment Preserving Inverse Text Normalization.
         Args:
             asr_words_list: (list[list[Word]]) List of ASR words
             pnc_words_list: (list[list[Word]]) List of words with punctuation/capitalization
