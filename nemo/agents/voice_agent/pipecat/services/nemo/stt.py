@@ -33,7 +33,8 @@ from pipecat.utils.time import time_now_iso8601
 from pipecat.utils.tracing.service_decorators import traced_stt
 from pydantic import BaseModel
 
-from nemo.agents.voice_agent.pipecat.services.nemo.legacy_asr import NemoLegacyASRService
+from nemo.agents.voice_agent.pipecat.services.nemo.streaming_asr import NemoStreamingASRService
+from nemo.agents.voice_agent.pipecat.services.nemo.streaming_diar import NeMoStreamingDiarService
 
 try:
     # disable nemo logging
@@ -92,7 +93,9 @@ class NemoSTTService(STTService):
 
     def _load_model(self):
         if self._backend == "legacy":
-            self._model = NemoLegacyASRService(self._model_name, device=self._device, decoder_type=self._decoder_type)
+            self._model = NemoStreamingASRService(
+                self._model_name, device=self._device, decoder_type=self._decoder_type
+            )
         else:
             raise ValueError(f"Invalid ASR backend: {self._backend}")
 
@@ -157,7 +160,23 @@ class NemoSTTService(STTService):
                 audio = b"".join(self.audio_buffer)
                 self.audio_buffer = []
 
-                transcription, is_final = self._model.transcribe(audio)
+                asr_result = self._model.transcribe(audio)
+                transcription = asr_result.text
+                is_final = asr_result.is_final
+                eou_latency = asr_result.eou_latency
+                eob_latency = asr_result.eob_latency
+                eou_prob = asr_result.eou_prob
+                eob_prob = asr_result.eob_prob
+                if eou_latency is not None:
+                    logger.debug(
+                        f"EOU latency: {eou_latency: .4f} seconds. EOU probability: {eou_prob: .2f}."
+                        f"Processing time: {asr_result.processing_time: .4f} seconds."
+                    )
+                if eob_latency is not None:
+                    logger.debug(
+                        f"EOB latency: {eob_latency: .4f} seconds. EOB probability: {eob_prob: .2f}."
+                        f"Processing time: {asr_result.processing_time: .4f} seconds."
+                    )
                 await self.stop_ttfb_metrics()
                 await self.stop_processing_metrics()
 
@@ -239,7 +258,7 @@ class NemoSTTService(STTService):
         self._load_model()
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
-        if isinstance(frame, VADUserStoppedSpeakingFrame) and isinstance(self._model, NemoLegacyASRService):
+        if isinstance(frame, VADUserStoppedSpeakingFrame) and isinstance(self._model, NeMoStreamingDiarService):
             # manualy reset the state of the model when end of utterance is detected by VAD
             logger.debug("Resetting state of the model due to VADUserStoppedSpeakingFrame")
             self._model.reset_state()
