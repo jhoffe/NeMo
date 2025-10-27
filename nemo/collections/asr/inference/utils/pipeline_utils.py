@@ -56,6 +56,12 @@ def normalize_features(features: Tensor, feature_lens: Tensor = None) -> Tensor:
 
 
 def memoize_normalization_mode():
+    """
+    Decorator to memoize the normalization mode.
+    In the first call, the normalization mode is detected and cached.
+    In the subsequent calls, the cached normalization mode is used.
+    """
+
     def decorator(func):
         mode = None  # Cache the detected format
 
@@ -114,7 +120,14 @@ def drop_trailing_features(features: Tensor, expected_feature_buffer_len: int) -
 
 
 def make_preprocessor_deterministic(asr_model_cfg: DictConfig, disable_normalization: bool = True) -> DictConfig:
-    """Make the preprocessor deterministic by disabling normalization, dither and padding"""
+    """
+    Make the preprocessor deterministic by disabling normalization, dither and padding
+    Args:
+        asr_model_cfg: (DictConfig) ASR model configuration.
+        disable_normalization: (bool) Whether to disable normalization. Default is True.
+    Returns:
+        (DictConfig) ASR model configuration with deterministic preprocessor.
+    """
     # Enable config overwriting
     with open_dict(asr_model_cfg):
         # Normalization will be done per buffer in frame_bufferer
@@ -129,7 +142,13 @@ def make_preprocessor_deterministic(asr_model_cfg: DictConfig, disable_normaliza
 
 
 def get_confidence_utils(confidence_cfg: DictConfig) -> tuple:
-    """Get the confidence function and the confidence aggregator"""
+    """
+    Get the confidence function and the confidence aggregator
+    Args:
+        confidence_cfg: (DictConfig) Confidence configuration.
+    Returns:
+        (tuple) Confidence function and the confidence aggregator.
+    """
     if confidence_cfg.method_cfg.name == "max_prob":
         conf_type = "max_prob"
         conf_alpha = 1.0
@@ -178,6 +197,13 @@ def update_punctuation_and_language_tokens_timestamps(
     RNNT models predict punctuations and language tokens at the end of the sequence.
     Due to this, it appears as if there's a silence between the last word and the punctuation.
     This function moves the tokens close to preceding word in the list.
+    Args:
+        tokens: (Tensor) Tokens tensor.
+        timestamp: (Tensor) Timestamps tensor.
+        tokens_to_move: (set[int]) Set of tokens to move.
+        underscore_id: (int) ID of the underscore token.
+    Returns:
+        (Tensor) Updated timestamps tensor.
     """
 
     n_tokens = tokens.shape[0]
@@ -221,14 +247,14 @@ def update_punctuation_and_language_tokens_timestamps(
     return updated_timestamps
 
 
-def adjust_vad_segments(vad_segments: torch.Tensor, left_padding_size: float) -> torch.Tensor | None:
+def adjust_vad_segments(vad_segments: Tensor, left_padding_size: float) -> Tensor | None:
     """
     Adjust VAD segments for stateful mode by subtracting left_padding and applying clipping rules.
     Args:
-        vad_segments: VAD segments tensor with shape [num_segments, 2] (start_time, end_time)
-        left_padding_size: Amount of left padding in seconds to subtract from segments
+        vad_segments: (Tensor) VAD segments tensor with shape [num_segments, 2] (start_time, end_time)
+        left_padding_size: (float) Amount of left padding in seconds to subtract from segments
     Returns:
-        Adjusted VAD segments tensor
+        (Tensor | None) Adjusted VAD segments tensor or None if no valid segments are left.
     """
     if vad_segments is None or len(vad_segments) == 0:
         return vad_segments

@@ -30,7 +30,7 @@ from nemo.collections.common.tokenizers.tokenizer_spec import TokenizerSpec
 
 class BPEDecoder:
     """
-    BPEDecoder class for decoding BPE (Byte Pair Encoding) tokens into words with associated timestamps and confidence scores
+    BPEDecoder class for decoding BPE (Byte Pair Encoding) tokens into words and segments by preserving timestamps and confidence scores
     """
 
     def __init__(
@@ -42,6 +42,16 @@ class BPEDecoder:
         word_boundary_tolerance: float,
         token_duration_in_secs: float,
     ):
+        """
+        Initialize the BPEDecoder.
+        Args:
+            vocabulary (list[str]): List of vocabulary tokens.
+            tokenizer (TokenizerSpec): Tokenizer object.
+            confidence_aggregator (Callable): Confidence aggregator function.
+            asr_supported_puncts (set): Set of supported punctuation symbols.
+            word_boundary_tolerance (float): Word boundary tolerance for timestamp refinement.
+            token_duration_in_secs (float): Token duration in seconds.
+        """
 
         self.vocabulary = vocabulary
         self.tokenizer = tokenizer
@@ -100,8 +110,8 @@ class BPEDecoder:
             timesteps (list): List of token timestamps.
             confidences (list): List of token confidence scores.
         Returns:
-            TextSegment: Text segment with text, start time, end time, and confidence score.
-            need_merge: True if the text segment should be merged with the last segment stored in the state
+            (tuple[TextSegment | None, bool]) Text segment with text, start time, end time, and confidence score.
+            Also returns a boolean to indicate if the text segment should be merged with the last segment stored in the state
         """
         n_tokens = len(tokens)
 
@@ -137,8 +147,8 @@ class BPEDecoder:
             timesteps (list): List of token timesteps.
             confidences (list): List of token confidence scores.
         Returns:
-            list: List of decoded words with text, start time, end time, and confidence score.
-            need_merge: True if the first word should be merged with the last word stored in the state
+            (tuple[list[Word], bool]) List of decoded words with text, start time, end time, and confidence score.
+            Also returns a boolean to indicate if the first word should be merged with the last word stored in the state
         """
         n_tokens = len(tokens)
 

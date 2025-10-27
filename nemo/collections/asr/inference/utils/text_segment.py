@@ -28,7 +28,7 @@ def get_translation_table(punct_marks_frozen: frozenset[str], sep: str) -> dict:
         sep (str): Separator to replace certain punctuation marks
 
     Returns:
-        Translation table for str.translate()
+        (dict) Translation table for str.translate()
     """
     replace_map = {mark: sep if mark in SEP_REPLACEABLE_PUNCTUATION else "" for mark in punct_marks_frozen}
     return str.maketrans(replace_map)
@@ -44,7 +44,7 @@ def normalize_text(text: str, punct_marks: set[str], sep: str) -> str:
         sep (str): Separator to replace certain punctuation marks
 
     Returns:
-        Normalized text
+        (str) Normalized text
     """
     trans_table = get_translation_table(frozenset(punct_marks), sep)
     return text.translate(trans_table).lower()
@@ -53,7 +53,16 @@ def normalize_text(text: str, punct_marks: set[str], sep: str) -> str:
 def validate_init_params(
     text: str, start: float, end: float, conf: float, semiotic_class: str = None, strict: bool = False
 ) -> None:
-    """Validate initialization parameters."""
+    """
+    Validate initialization parameters.
+    Args:
+        text: (str) Text to validate
+        start: (float) Start time
+        end: (float) End time
+        conf: (float) Confidence score
+        semiotic_class: (str) Semiotic class
+        strict: (bool) Whether to strict validation
+    """
     if not isinstance(text, str):
         raise TypeError(f"text must be a string, got {type(text).__name__}")
     if not isinstance(start, (int, float)):
@@ -74,6 +83,11 @@ def validate_init_params(
 
 
 class TextSegment:
+    """
+    Text segment class.
+    Represents a continuous text segment with a start time, end time, and confidence score.
+    """
+
     __slots__ = ['_text', '_start', '_end', '_conf']
 
     def __init__(self, text: str, start: float, end: float, conf: float) -> None:
@@ -207,6 +221,11 @@ class TextSegment:
 
 
 class Word(TextSegment):
+    """
+    Word class.
+    Represents a word with a text, start time, end time, confidence score, and semiotic class.
+    """
+
     __slots__ = ['_semiotic_class']
 
     def __init__(

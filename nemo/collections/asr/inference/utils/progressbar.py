@@ -16,7 +16,20 @@ from tqdm import tqdm
 
 
 class ProgressBar:
+    """
+    Base class for progress bars.
+    """
+
     def __init__(self, value: float = 0.0, total: float = 1.0):
+        """
+        Initialize the ProgressBar.
+        Args:
+            value: (float) Initial value.
+            total: (float) Total value. Must be greater than zero.
+        Raises:
+            ValueError: If total is less than or equal to zero.
+            ValueError: If value is less than zero or greater than total.
+        """
         if total <= 0:
             raise ValueError("Total must be greater than zero.")
         if value < 0 or value > total:
@@ -31,11 +44,19 @@ class ProgressBar:
         self.value = self.start_value
 
     def increment(self, by: float) -> None:
-        """Increase progress but do not exceed total."""
+        """
+        Increase progress but do not exceed total.
+        Args:
+            by: (float) Amount to increment.
+        """
         self.value = min(self.value + by, self.total)
 
     def update_bar(self, by: float) -> None:
-        """Update progress and call update."""
+        """
+        Update progress and call update.
+        Args:
+            by: (float) Amount to increment.
+        """
         self.increment(by)
         self.update()
 
@@ -45,18 +66,34 @@ class ProgressBar:
         self.update(True)
 
     def update(self, is_end: bool = False) -> None:
-        """Abstract method for updating the progress bar."""
+        """
+        Abstract method for updating the progress bar.
+        Args:
+            is_end: (bool) Whether the progress bar is at the end.
+        """
         raise NotImplementedError("Subclasses must implement update method.")
 
 
 class TQDMProgressBar(ProgressBar):
+    """TQDM progress bar wrapper."""
+
     def __init__(self, value: float = 0.0, total: float = 1.0):
+        """
+        Initialize the TQDMProgressBar.
+        Args:
+            value: (float) Initial value.
+            total: (float) Total value.
+        """
         super().__init__(value, total)
         self.bar = tqdm(total=self.total, bar_format='{l_bar}{bar}')
         self.prev_value = value
 
     def update(self, is_end: bool = False) -> None:
-        """Update tqdm progress bar."""
+        """
+        Update tqdm progress bar.
+        Args:
+            is_end: (bool) Whether the progress bar is at the end.
+        """
         increment = self.value - self.prev_value
         if increment > 0:
             self.bar.update(increment)

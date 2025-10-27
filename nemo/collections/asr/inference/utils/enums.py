@@ -30,25 +30,45 @@ class StrEnumMixin:
 
 
 class ASRDecodingType(StrEnumMixin, Enum):
+    """
+    Enumeration of the ASR decoding types.
+    """
+
     CTC = auto()
     RNNT = auto()
 
 
 class ASROutputGranularity(StrEnumMixin, Enum):
+    """
+    Enumeration of the ASR output granularity.
+    """
+
     WORD = auto()
     SEGMENT = auto()
 
 
 class PipelineType(StrEnumMixin, Enum):
+    """
+    Enumeration of the pipeline types.
+    """
+
     BUFFERED = auto()
     CACHE_AWARE = auto()
 
 
 class RequestType(StrEnumMixin, Enum):
+    """
+    Enumeration of the request types.
+    """
+
     FRAME = auto()
     FEATURE_BUFFER = auto()
 
 
 class FeatureBufferPaddingMode(StrEnumMixin, Enum):
+    """
+    Enumeration of the feature buffer padding modes.
+    """
+
     LEFT = auto()
     RIGHT = auto()

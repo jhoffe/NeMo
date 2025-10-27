@@ -21,18 +21,31 @@ from torch import Tensor
 
 
 class CacheAwareContext:
+    """
+    Stores the cache state for the Cache-Aware models.
+    """
+
     def __init__(
         self,
         cache_last_channel: Tensor | None = None,
         cache_last_time: Tensor | None = None,
         cache_last_channel_len: Tensor | None = None,
     ):
+        """
+        Args:
+            cache_last_channel (Tensor | None): Last channel of the cache.
+            cache_last_time (Tensor | None): Last time of the cache.
+            cache_last_channel_len (Tensor | None): Last channel length of the cache.
+        """
         self.cache_last_channel = cache_last_channel
         self.cache_last_time = cache_last_time
         self.cache_last_channel_len = cache_last_channel_len
 
 
 class CacheAwareContextManager:
+    """
+    Manager class to manipulate the cached states for the Cache-Aware models.
+    """
 
     def __init__(
         self,
@@ -40,6 +53,13 @@ class CacheAwareContextManager:
         num_slots: int,
         use_cache: bool = True,
     ):
+        """
+        Initialize the CacheAwareContextManager.
+        Args:
+            cache_aware_model (Any): Cache-Aware model object. It should have the get_initial_cache_state method.
+            num_slots (int): Number of slots to use for the cache. It should be greater than or equal to the batch size.
+            use_cache (bool): Whether to use the cache. Default is True. If False, the cache is disabled.
+        """
         self.cache_aware_model = cache_aware_model
         # Cache aware model should have the following methods:
         if not hasattr(self.cache_aware_model, "get_initial_cache_state"):
