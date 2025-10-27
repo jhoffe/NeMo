@@ -46,6 +46,7 @@ if TYPE_CHECKING:
 
 
 class CacheAwareCTCPipeline(BasePipeline):
+    """Cache Aware CTC pipeline."""
 
     def __init__(
         self,
@@ -54,6 +55,14 @@ class CacheAwareCTCPipeline(BasePipeline):
         pnc_model: PunctuationCapitalizer | None = None,
         itn_model: AlignmentPreservingInverseNormalizer | None = None,
     ):
+        """
+        Initialize the CacheAwareCTCPipeline.
+        Args:
+            cfg: (DictConfig) Configuration parameters.
+            asr_model: (CacheAwareCTCInferenceWrapper) ASR model.
+            pnc_model: (PunctuationCapitalizer | None) Punctuation/Capitalization restoration model.
+            itn_model: (AlignmentPreservingInverseNormalizer | None) Inverse Text Normalization model.
+        """
         self.copy_asr_model_attributes(asr_model)
         self.init_parameters(cfg)
         self.init_context_manager()
@@ -66,7 +75,11 @@ class CacheAwareCTCPipeline(BasePipeline):
         super().__init__()
 
     def init_parameters(self, cfg: DictConfig) -> None:
-        """Initialize the configuration parameters."""
+        """
+        Initialize the configuration parameters.
+        Args:
+            cfg: (DictConfig) Configuration parameters.
+        """
         if cfg.streaming.att_context_size is not None:
             self.asr_model.set_default_att_context_size(att_context_size=cfg.streaming.att_context_size)
         self.sample_rate = cfg.streaming.sample_rate
@@ -154,12 +167,18 @@ class CacheAwareCTCPipeline(BasePipeline):
         )
 
     def reset_session(self) -> None:
-        """Reset the frame buffer and internal state pool"""
+        """Reset the context manager."""
         self.context_manager.reset()
         super().reset_session()
 
     def create_state(self, options: ASRRequestOptions) -> CacheAwareCTCStreamingState:
-        """Create new empty state."""
+        """
+        Create new empty state.
+        Args:
+            options: (ASRRequestOptions) Request options for particular stream.
+        Returns:
+            (CacheAwareCTCStreamingState) New empty state.
+        """
         state = CacheAwareCTCStreamingState()
         state.set_global_offset(0)
         new_options = options.augment_with_defaults(
@@ -183,8 +202,15 @@ class CacheAwareCTCPipeline(BasePipeline):
         """Return the separator for the text processor."""
         return self.sep
 
-    def preprocess(self, buffers: list[Tensor], right_paddings: list[int] | None = None):
-        """Preprocess the feature buffers by stacking them and computing the lengths"""
+    def preprocess(self, buffers: list[Tensor], right_paddings: list[int] | None = None) -> tuple[Tensor, Tensor]:
+        """
+        Preprocess the feature buffers by stacking them and computing the lengths
+        Args:
+            buffers: (list[Tensor]) List of feature buffers.
+            right_paddings: (list[int] | None) List of right paddings.
+        Returns:
+            (tuple[Tensor, Tensor]) Processed feature buffers and their lengths.
+        """
         feature_buffers = [f_buffer.unsqueeze_(0) for f_buffer in buffers]
         feature_buffer_lens = torch.tensor([f_buffer.shape[2] for f_buffer in feature_buffers], device=self.device)
         if right_paddings is not None:
@@ -193,15 +219,15 @@ class CacheAwareCTCPipeline(BasePipeline):
         feature_buffers = torch.cat(feature_buffers).to(self.device)
         return feature_buffers, feature_buffer_lens
 
-    def run_greedy_decoder(self, state: CacheAwareCTCStreamingState, frame: Frame, log_probs: torch.Tensor):
+    def run_greedy_decoder(self, state: CacheAwareCTCStreamingState, frame: Frame, log_probs: Tensor):
         """
         Run the greedy CTC decoder on the log_probs and update the state
         Args:
-            state: The state of the stream
-            frame: The current frame
-            log_probs: The log probabilities of the current frame
+            state: (CacheAwareCTCStreamingState) The state of the stream
+            frame: (Frame) The current frame
+            log_probs: (Tensor) The log probabilities of the current frame
         Returns:
-            updates the state and returns a boolean indicating if EOU is detected
+            (bool) Whether EOU is detected.
         """
         eou_detected = frame.is_last
         last_token = state.label_buffer[-1] if len(state.label_buffer) > 0 else self.blank_id
@@ -221,7 +247,15 @@ class CacheAwareCTCPipeline(BasePipeline):
 
     def decode_log_probs(
         self, frames: list[Frame], log_probs: Tensor, tail_log_probs: Tensor | None, ready_state_ids: set
-    ):
+    ) -> None:
+        """
+        Decode the log probabilities and update the state
+        Args:
+            frames: (list[Frame]) List of frames to transcribe.
+            log_probs: (Tensor) Log probabilities.
+            tail_log_probs: (Tensor | None) Tail log probabilities.
+            ready_state_ids: (set) Set of ready state IDs.
+        """
 
         for idx, frame in enumerate(frames):
             state = self.get_state(frame.stream_id)
@@ -256,6 +290,13 @@ class CacheAwareCTCPipeline(BasePipeline):
         3. Perform a streaming step with the ASR model
         4. Update the cache and reset the cache slots for the streams that has ended
         5. Decode the log probabilities and update the state
+
+        Args:
+            frames: (list[Frame]) List of frames to transcribe.
+            buffered_features: (list[Tensor]) List of buffered features.
+            right_paddings: (list[int] | None) List of right paddings.
+            ready_state_ids: (set) Set of ready state IDs.
+            keep_all_outputs: (bool) Whether to keep all outputs or not.
         """
         feature_buffers, feature_buffer_lens = self.preprocess(buffered_features, right_paddings)
 
@@ -286,6 +327,8 @@ class CacheAwareCTCPipeline(BasePipeline):
         Transcribes the frames in a streaming manner.
         After detecting EOU, it updates the state and run text processor.
         If there are multiple streams, it waits until all states are ready to run text processor.
+        Args:
+            frames: (list[Frame]) List of frames to transcribe.
         """
         all_fbuffers, right_paddings = self.bufferer.update(frames)
 
@@ -325,7 +368,11 @@ class CacheAwareCTCPipeline(BasePipeline):
         raise NotImplementedError("Feature buffer type is not supported for cache aware streaming.")
 
     def get_request_generator(self) -> ContinuousBatchedRequestStreamer:
-        """Initialize the request generator."""
+        """
+        Initialize the request generator.
+        Returns:
+            (ContinuousBatchedRequestStreamer) Request generator.
+        """
         request_generator = ContinuousBatchedRequestStreamer(
             n_frames_per_stream=1,
             frame_size_in_secs=self.chunk_size_in_secs,

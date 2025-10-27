@@ -44,6 +44,7 @@ if TYPE_CHECKING:
 
 
 class BufferedCTCPipeline(BasePipeline):
+    """Buffered CTC pipeline."""
 
     def __init__(
         self,
@@ -52,6 +53,14 @@ class BufferedCTCPipeline(BasePipeline):
         pnc_model: PunctuationCapitalizer | None = None,
         itn_model: AlignmentPreservingInverseNormalizer | None = None,
     ):
+        """
+        Initialize the BufferedCTCPipeline.
+        Args:
+            cfg: (DictConfig) Configuration parameters.
+            asr_model: (CTCInferenceWrapper) ASR model.
+            pnc_model: (PunctuationCapitalizer | None) Punctuation/Capitalization restoration model.
+            itn_model: (AlignmentPreservingInverseNormalizer | None) Inverse Text Normalization model.
+        """
         self.copy_asr_model_attributes(asr_model)
         self.init_parameters(cfg)
         self.init_bufferer_for_buffered_streaming()
@@ -63,7 +72,11 @@ class BufferedCTCPipeline(BasePipeline):
         super().__init__()
 
     def init_parameters(self, cfg: DictConfig) -> None:
-        """Initialize the configuration parameters."""
+        """
+        Initialize the configuration parameters.
+        Args:
+            cfg: (DictConfig) Configuration parameters.
+        """
         self.sample_rate = cfg.streaming.sample_rate
         self.asr_output_granularity = cfg.asr_output_granularity
         self.batch_size = cfg.streaming.batch_size
@@ -120,7 +133,11 @@ class BufferedCTCPipeline(BasePipeline):
         )
 
     def init_zero_log_probs(self) -> Tensor:
-        """Initialize the log probabilities for the zero buffer."""
+        """
+        Initialize the log probabilities for the zero buffer.
+        Returns:
+            (Tensor) Log probabilities for the zero buffer.
+        """
         check_existance_of_required_attributes(
             self, ['asr_model', 'buffer_size_in_secs', 'sample_rate', 'device', 'expected_feature_buffer_len']
         )
@@ -136,7 +153,13 @@ class BufferedCTCPipeline(BasePipeline):
         ]
 
     def create_state(self, options: ASRRequestOptions) -> CTCStreamingState:
-        """Create new empty state."""
+        """
+        Create new empty state.
+        Args:
+            options: (ASRRequestOptions) Request options for particular stream.
+        Returns:
+            (CTCStreamingState) New empty state.
+        """
         state = CTCStreamingState()
         state.set_global_offset(-self.initial_delay)
         new_options = options.augment_with_defaults(
@@ -153,7 +176,14 @@ class BufferedCTCPipeline(BasePipeline):
         return self.sep
 
     def get_cut_off_range(self, T: int, is_last: bool) -> tuple[int, int]:
-        """Compute the start and end indices to clip the log probs."""
+        """
+        Compute the start and end indices to clip the log probs.
+        Args:
+            T: (int) Time dimension of the log probabilities.
+            is_last: (bool) Whether the last frame is reached.
+        Returns:
+            (tuple[int, int]) Start and end indices to clip the log probs.
+        """
         start = max(T - 1 - self.mid_delay, 0)
         end = T if is_last else min(start + self.tokens_per_frame, T)
         return start, end
@@ -161,7 +191,15 @@ class BufferedCTCPipeline(BasePipeline):
     def preprocess(
         self, buffers: Tensor, buffer_lens: Tensor, expected_feature_buffer_len: int
     ) -> tuple[Tensor, Tensor]:
-        """Preprocess the buffered frames and extract features."""
+        """
+        Preprocess the buffered frames and extract features.
+        Args:
+            buffers: (Tensor) Audio buffers.
+            buffer_lens: (Tensor) Lengths of the audio buffers.
+            expected_feature_buffer_len: (int) Expected length of the feature buffers.
+        Returns:
+            (tuple[Tensor, Tensor]) Processed feature buffers and their lengths.
+        """
         feature_buffers, feature_buffer_lens = self.preprocessor(input_signal=buffers, length=buffer_lens)
         feature_buffers = drop_trailing_features(feature_buffers, expected_feature_buffer_len)
         feature_buffers = normalize_features(feature_buffers, feature_buffer_lens)
@@ -171,7 +209,15 @@ class BufferedCTCPipeline(BasePipeline):
     def get_logprobs_given_raw_signals(
         self, frames: list[Frame], raw_signals: list[Tensor], left_paddings: list[int]
     ) -> Tensor:
-        """Get log probs from the ASR model."""
+        """
+        Get log probs from the CTC model.
+        Args:
+            frames: (list[Frame]) Frames to transcribe.
+            raw_signals: (list[Tensor]) Audio buffers.
+            left_paddings: (list[int]) Left paddings for audio buffers.
+        Returns:
+            (Tensor) Log probabilities.
+        """
 
         if self.right_padding:
             left_paddings = torch.tensor(left_paddings, dtype=torch.int64, device=self.device)
@@ -225,7 +271,14 @@ class BufferedCTCPipeline(BasePipeline):
     def get_logprobs_given_processed_signals(
         self, fbuffers: list[FeatureBuffer], processed_signals: list[Tensor]
     ) -> Tensor:
-        """Get log probs from the ASR model."""
+        """
+        Get log probs from the ASR model.
+        Args:
+            fbuffers: (list[FeatureBuffer]) Feature buffers.
+            processed_signals: (list[Tensor]) Processed buffers.
+        Returns:
+            (Tensor) Log probabilities.
+        """
         processed_signals = torch.cat([sig.unsqueeze_(0) for sig in processed_signals]).to(self.device)
         processed_signals = drop_trailing_features(processed_signals, self.expected_feature_buffer_len)
         processed_signal_lengths = torch.tensor([f.valid_size for f in fbuffers], device=self.device)
@@ -245,7 +298,13 @@ class BufferedCTCPipeline(BasePipeline):
         return log_probs
 
     def compute_logprobs_from_frames(self, frames: list[Frame]) -> Tensor:
-        """Buffer the frames and get the log probabilities."""
+        """
+        Buffer the frames and get the log probabilities.
+        Args:
+            frames: (list[Frame]) List of frames to transcribe.
+        Returns:
+            (Tensor) Log probabilities.
+        """
         raw_signals, left_paddings = self.bufferer.update(frames)
         log_probs = None
         if len(raw_signals) > 0:
@@ -253,7 +312,13 @@ class BufferedCTCPipeline(BasePipeline):
         return log_probs
 
     def compute_logprobs_from_feature_buffers(self, fbuffers: list[FeatureBuffer]) -> Tensor:
-        """Buffer the feature buffers and get the log probabilities."""
+        """
+        Buffer the feature buffers and get the log probabilities.
+        Args:
+            fbuffers: (list[FeatureBuffer]) List of feature buffers to transcribe.
+        Returns:
+            (Tensor) Log probabilities.
+        """
         processed_signals = self.bufferer.update(fbuffers)
         log_probs = None
         if len(processed_signals) > 0:
@@ -263,7 +328,17 @@ class BufferedCTCPipeline(BasePipeline):
     def run_greedy_decoder(
         self, state: CTCStreamingState, request: Request, buffer_log_probs: Tensor, start: int, end: int
     ) -> bool:
-        """Run Greedy decoder, update state and trigger EOU detection."""
+        """
+        Run Greedy decoder, update state and trigger EOU detection.
+        Args:
+            state: (CTCStreamingState) Current state for the particular stream.
+            request: (Request) Current request for the particular stream.
+            buffer_log_probs: (Tensor) Log probabilities.
+            start: (int) Start index of the log probabilities.
+            end: (int) End index of the log probabilities.
+        Returns:
+            (bool) Whether EOU is detected.
+        """
         clipped_output, tail_output, eou_detected, start_idx, end_idx = self.greedy_ctc_decoder(
             buffer_log_probs,
             start,
@@ -288,8 +363,8 @@ class BufferedCTCPipeline(BasePipeline):
         """
         Shared transcribe step for frames and feature buffers.
         Args:
-            requests: List of frames or feature buffers to transcribe.
-            log_probs: Log probabilities from the ASR model.
+            requests: (list[Request]) List of frames or feature buffers to transcribe.
+            log_probs: (Tensor) Log probabilities.
         """
         postponed_requests = [(ridx, request.stream_id) for ridx, request in enumerate(requests)]
         next_postponed_requests = []
@@ -328,7 +403,7 @@ class BufferedCTCPipeline(BasePipeline):
         """
         Transcribe a step for feature buffers.
         Args:
-            fbuffers: List of feature buffers to transcribe.
+            fbuffers: (list[FeatureBuffer]) List of feature buffers to transcribe.
         """
         log_probs = self.compute_logprobs_from_feature_buffers(fbuffers)
         if log_probs is not None:
@@ -337,9 +412,9 @@ class BufferedCTCPipeline(BasePipeline):
 
     def transcribe_step_for_frames(self, frames: list[Frame]) -> None:
         """
-        Transcribe a step for frames.
+        Transcribe step for frames.
         Args:
-            frames: List of frames to transcribe.
+            frames: (list[Frame]) List of frames to transcribe.
         """
         log_probs = self.compute_logprobs_from_frames(frames)
         if log_probs is not None:
@@ -347,7 +422,11 @@ class BufferedCTCPipeline(BasePipeline):
             self.shared_transcribe_step(requests=frames, log_probs=log_probs)
 
     def get_request_generator(self) -> ContinuousBatchedRequestStreamer:
-        """Initialize the request generator."""
+        """
+        Initialize the request generator.
+        Returns:
+            (ContinuousBatchedRequestStreamer) Request generator.
+        """
         request_generator = ContinuousBatchedRequestStreamer(
             n_frames_per_stream=1,
             frame_size_in_secs=self.chunk_size,

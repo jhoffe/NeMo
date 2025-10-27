@@ -46,6 +46,7 @@ if TYPE_CHECKING:
 
 
 class CacheAwareRNNTPipeline(BasePipeline):
+    """Cache Aware RNNT pipeline."""
 
     def __init__(
         self,
@@ -54,6 +55,14 @@ class CacheAwareRNNTPipeline(BasePipeline):
         pnc_model: PunctuationCapitalizer | None = None,
         itn_model: AlignmentPreservingInverseNormalizer | None = None,
     ):
+        """
+        Initialize the CacheAwareRNNTPipeline.
+        Args:
+            cfg: (DictConfig) Configuration parameters.
+            asr_model: (CacheAwareRNNTInferenceWrapper) ASR model.
+            pnc_model: (PunctuationCapitalizer | None) Punctuation/Capitalization restoration model.
+            itn_model: (AlignmentPreservingInverseNormalizer | None) Inverse Text Normalization model.
+        """
         self.copy_asr_model_attributes(asr_model)
         self.init_parameters(cfg)
         self.init_context_manager()
@@ -66,7 +75,11 @@ class CacheAwareRNNTPipeline(BasePipeline):
         super().__init__()
 
     def init_parameters(self, cfg: DictConfig) -> None:
-        """Initialize the parameters."""
+        """
+        Initialize the parameters.
+        Args:
+            cfg: (DictConfig) Configuration parameters.
+        """
         if cfg.streaming.att_context_size is not None:
             self.asr_model.set_default_att_context_size(att_context_size=cfg.streaming.att_context_size)
 
@@ -156,12 +169,18 @@ class CacheAwareRNNTPipeline(BasePipeline):
         )
 
     def reset_session(self) -> None:
-        """Reset the frame buffer and internal state pool"""
+        """Reset the context manager."""
         self.context_manager.reset()
         super().reset_session()
 
     def create_state(self, options: ASRRequestOptions) -> CacheAwareRNNTStreamingState:
-        """Create new empty state."""
+        """
+        Create new empty state.
+        Args:
+            options: (ASRRequestOptions) Request options for particular stream.
+        Returns:
+            (CacheAwareRNNTStreamingState) New empty state.
+        """
         state = CacheAwareRNNTStreamingState()
         state.set_global_offset(0)
         new_options = options.augment_with_defaults(
@@ -187,7 +206,14 @@ class CacheAwareRNNTPipeline(BasePipeline):
         return self.sep
 
     def preprocess(self, buffers: list[Tensor], right_paddings: list[int] | None = None) -> tuple[Tensor, Tensor]:
-        """Preprocess the feature buffers by stacking them and computing the lengths"""
+        """
+        Preprocess the feature buffers by stacking them and computing the lengths
+        Args:
+            buffers: (list[Tensor]) List of feature buffers.
+            right_paddings: (list[int] | None) List of right paddings.
+        Returns:
+            (tuple[Tensor, Tensor]) Processed feature buffers and their lengths.
+        """
         feature_buffers = [f_buffer.unsqueeze_(0) for f_buffer in buffers]
         feature_buffer_lens = torch.tensor([f_buffer.shape[2] for f_buffer in feature_buffers], device=self.device)
         if right_paddings is not None:
@@ -200,11 +226,11 @@ class CacheAwareRNNTPipeline(BasePipeline):
         """
         Run the greedy RNNT decoder on the hypothesis and update the state
         Args:
-            state: The state of the stream
-            frame: The current frame
-            hyp: The hypothesis of the current frame
+            state: (CacheAwareRNNTStreamingState) The state of the stream
+            frame: (Frame) The current frame
+            hyp: (Hypothesis) The hypothesis of the current frame
         Returns:
-            updates the state and returns a boolean indicating if EOU is detected
+            (bool) Whether EOU is detected.
         """
         eou_detected = frame.is_last
         cur_output, cur_labels, new_offset = self.greedy_rnnt_decoder(
@@ -248,6 +274,12 @@ class CacheAwareRNNTPipeline(BasePipeline):
         6. Update the previous hypothesis and reset the previous hypothesis for the streams that has ended
         7. Perform greedy RNNT decoding to get the best hypothesis and update the states
         8. Update the ready states to indicate that the state is ready for text post-processing
+        Args:
+            frames: (list[Frame]) List of frames to transcribe.
+            features: (list[Tensor]) List of feature buffers.
+            right_paddings: (list[int] | None) List of right paddings.
+            ready_state_ids: (set) Set of ready state IDs.
+            keep_all_outputs: (bool) Whether to keep all outputs or not.
         """
 
         feature_buffers, feature_buffer_lens = self.preprocess(features, right_paddings)
@@ -300,6 +332,8 @@ class CacheAwareRNNTPipeline(BasePipeline):
         Transcribes the frames in a streaming manner.
         After detecting EOU, it updates the state and run text processor.
         If there are multiple streams, it waits until all states are ready to run text processor.
+        Args:
+            frames: (list[Frame]) List of frames to transcribe.
         """
 
         all_fbuffers, right_paddings = self.bufferer.update(frames)
@@ -339,8 +373,11 @@ class CacheAwareRNNTPipeline(BasePipeline):
         self.update_partial_transcript(frames, self.tokenizer, self.leading_regex_pattern)
 
     def get_request_generator(self) -> ContinuousBatchedRequestStreamer:
-        """Initialize the request generator."""
-
+        """
+        Initialize the request generator.
+        Returns:
+            (ContinuousBatchedRequestStreamer) Request generator.
+        """
         # for cache aware streaming we need to process one frame at a time -> n_frames_per_stream=1
         request_generator = ContinuousBatchedRequestStreamer(
             n_frames_per_stream=1,

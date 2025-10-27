@@ -47,10 +47,16 @@ if TYPE_CHECKING:
 
 class PipelineOutput:
     """
-    Class to store the output of the pipeline.
+    Class to store the output of the pipeline. Contains transcriptions and text segments.
     """
 
     def __init__(self, texts: list[str] | None = None, segments: list[list[TextSegment]] | None = None):
+        """
+        Initialize the PipelineOutput.
+        Args:
+            texts: (list[str] | None) List of transcriptions.
+            segments: (list[list[TextSegment]] | None) List of corresponding text segments.
+        """
         if texts is None and segments is None:
             raise ValueError("At least one of the 'texts' or 'segments' should be provided.")
         self.texts = texts
@@ -181,9 +187,7 @@ class BasePipeline(PipelineInterface):
                 state.partial_transcript = ""
 
     def init_bpe_decoder(self) -> None:
-        """
-        Initialize the BPE decoder
-        """
+        """Initialize the BPE decoder"""
         check_existance_of_required_attributes(
             self,
             [
