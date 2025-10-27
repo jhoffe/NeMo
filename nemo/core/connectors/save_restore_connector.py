@@ -759,14 +759,14 @@ class SaveRestoreConnector:
     def _load_state_dict_from_disk(model_weights, map_location='cpu'):
         """
         Load model state dict from disk.
-        
+
         Args:
             model_weights: Path to the checkpoint file
             map_location: Device to map tensors to
-            
+
         Returns:
             State dict loaded from checkpoint
-            
+
         """
         try:
             torch.load(model_weights, map_location=map_location, weights_only=True)
