@@ -32,6 +32,15 @@ SUPPORTED_CONFIDENCE_AGGREGATORS = get_confidence_aggregation_bank()
 
 
 class ASRInferenceWrapper:
+    """
+    Base class for ASR inference wrappers.
+    It provides a common interface for ASR inference wrappers.
+    Derived classes MUST implement the following methods:
+        - __post_init__: Additional post initialization steps that must be implemented in the derived classes.
+        - get_blank_id: Returns the blank id for the model.
+        - get_vocabulary: Returns the vocabulary for the model.
+        - get_subsampling_factor: Returns the subsampling factor for the model.
+    """
 
     def __init__(
         self,
@@ -43,6 +52,7 @@ class ASRInferenceWrapper:
         use_amp: bool = True,
     ):
         """
+        Initialize the ASR inference wrapper.
         Args:
             model_name: (str) path to the model checkpoint or a model name from the NGC cloud.
             decoding_cfg: (CTCDecodingConfig | RNNTDecodingConfig) decoding configuration.
@@ -87,6 +97,7 @@ class ASRInferenceWrapper:
     @property
     def segment_separators(self) -> list[str]:
         """
+        Returns segment separators.
         Returns:
             (list[str]) list of segment separators.
         """
@@ -95,6 +106,7 @@ class ASRInferenceWrapper:
     @property
     def word_separator(self) -> str:
         """
+        Returns word separator.
         Returns:
             (str) word separator.
         """
@@ -103,6 +115,7 @@ class ASRInferenceWrapper:
     @property
     def confidence_aggregator(self) -> Callable:
         """
+        Returns confidence aggregator function.
         Returns:
             (Callable) confidence aggregator function.
         """
@@ -110,12 +123,13 @@ class ASRInferenceWrapper:
 
     def copy_asr_config(self) -> DictConfig:
         """
+        Copies the ASR model config.
         Returns:
             (DictConfig) copy of the ASR model configuration.
         """
         return copy.deepcopy(self.asr_model_cfg)
 
-    def create_preprocessor(self) -> Callable:
+    def create_preprocessor(self) -> tuple[Callable, DictConfig]:
         """
         Creates a deterministic preprocessor from the ASR model configuration.
         Disables normalization, dither and padding.
@@ -131,6 +145,7 @@ class ASRInferenceWrapper:
 
     def supports_capitalization(self) -> bool:
         """
+        Checks if the ASR model supports capitalization.
         Returns:
             (bool) True if the ASR model supports capitalization, False otherwise.
         """
@@ -140,6 +155,7 @@ class ASRInferenceWrapper:
 
     def supports_punctuation(self) -> bool:
         """
+        Checks if the ASR model supports punctuation.
         Returns:
             (bool) True if the ASR model supports punctuation, False otherwise.
         """
@@ -149,16 +165,16 @@ class ASRInferenceWrapper:
 
     def supported_punctuation(self) -> set:
         """
+        Returns supported punctuation symbol set without single quote.
         Returns:
             (set) Set of supported punctuation symbols.
         """
-        if not hasattr(self, "asr_model") or self.asr_model is None:
-            raise ValueError("ASR model is not initialized.")
         return self.tokenizer.supported_punctuation - set("'")
 
     @cached_property
     def punctuation_ids(self) -> set:
         """
+        Returns ids of supported punctuation symbols.
         Returns:
             (set) Set of punctuation ids.
         """
@@ -171,6 +187,7 @@ class ASRInferenceWrapper:
     @cached_property
     def underscore_id(self) -> int:
         """
+        Returns id of the underscore token.
         Returns:
             (int) underscore id for the model.
         """
@@ -182,7 +199,7 @@ class ASRInferenceWrapper:
     @cached_property
     def language_token_ids(self) -> set:
         """
-        This property is used for some Riva models that have language tokens included in their vocabulary.
+        This property is used for some Riva models that have language tokens included in the vocabulary.
         Returns:
             (set) Set of language token ids.
         """
@@ -258,6 +275,7 @@ class ASRInferenceWrapper:
 
     def get_blank_id(self) -> int:
         """
+        Returns id of the blank token.
         Returns:
             (int) blank id for the model.
         """
@@ -265,6 +283,7 @@ class ASRInferenceWrapper:
 
     def get_vocabulary(self) -> list[str]:
         """
+        Returns the list of vocabulary tokens.
         Returns:
             (list[str]) list of vocabulary tokens.
         """
@@ -272,6 +291,7 @@ class ASRInferenceWrapper:
 
     def get_subsampling_factor(self) -> int:
         """
+        Returns the subsampling factor for the model.
         Returns:
             (int) subsampling factor for the model.
         """

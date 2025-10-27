@@ -25,6 +25,9 @@ from nemo.collections.asr.parts.utils.rnnt_utils import Hypothesis
 
 
 class CacheAwareRNNTInferenceWrapper(CacheAwareASRInferenceWrapper):
+    """
+    Provides a unified interface to work with Cache-Aware RNNT models.
+    """
 
     def __post_init__(self) -> None:
         """
@@ -55,6 +58,7 @@ class CacheAwareRNNTInferenceWrapper(CacheAwareASRInferenceWrapper):
 
     def get_blank_id(self) -> int:
         """
+        Returns id of the blank token.
         Returns:
             (int) blank id for the model.
         """
@@ -63,6 +67,7 @@ class CacheAwareRNNTInferenceWrapper(CacheAwareASRInferenceWrapper):
 
     def get_vocabulary(self) -> list[str]:
         """
+        Returns the list of vocabulary tokens.
         Returns:
             (list[str]) list of vocabulary tokens.
         """

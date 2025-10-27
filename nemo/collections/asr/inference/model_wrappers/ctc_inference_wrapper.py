@@ -20,6 +20,9 @@ from nemo.collections.asr.models import EncDecCTCModel, EncDecHybridRNNTCTCModel
 
 
 class CTCInferenceWrapper(ASRInferenceWrapper):
+    """
+    Provides a unified interface to work with CTC/Hybrid-CTC models.
+    """
 
     def __post_init__(self) -> None:
         """
@@ -44,6 +47,7 @@ class CTCInferenceWrapper(ASRInferenceWrapper):
 
     def get_blank_id(self) -> int:
         """
+        Returns id of the blank token.
         Returns:
             (int) blank id for the model.
         """
@@ -55,6 +59,7 @@ class CTCInferenceWrapper(ASRInferenceWrapper):
 
     def get_vocabulary(self) -> list[str]:
         """
+        Returns the list of vocabulary tokens.
         Returns:
             (list[str]) list of vocabulary tokens.
         """
@@ -65,6 +70,7 @@ class CTCInferenceWrapper(ASRInferenceWrapper):
 
     def get_subsampling_factor(self) -> int:
         """
+        Returns the subsampling factor for the ASR encoder.
         Returns:
             (int) subsampling factor for the ASR encoder model.
         """
@@ -77,7 +83,7 @@ class CTCInferenceWrapper(ASRInferenceWrapper):
             processed_signal: (Tensor) processed signal. Shape is torch.Size([B, C, T]).
             processed_signal_length: (Tensor) processed signal length. Shape is torch.Size([B]).
         Returns:
-            log_probs: (Tensor) log probabilities. Shape is torch.Size([B, T, V+1]).
+            (Tensor) log probabilities. Shape is torch.Size([B, T, V+1]).
         """
         if processed_signal.device != self.device:
             processed_signal = processed_signal.to(self.device)

@@ -21,6 +21,9 @@ from nemo.collections.asr.models import EncDecHybridRNNTCTCModel, EncDecRNNTMode
 
 
 class RNNTInferenceWrapper(ASRInferenceWrapper):
+    """
+    Provides a unified interface to work with RNNT/TDT/Hybrid models.
+    """
 
     def __post_init__(self) -> None:
         """
@@ -45,6 +48,7 @@ class RNNTInferenceWrapper(ASRInferenceWrapper):
 
     def get_blank_id(self) -> int:
         """
+        Returns id of the blank token.
         Returns:
             (int) blank id for the model.
         """
@@ -53,6 +57,7 @@ class RNNTInferenceWrapper(ASRInferenceWrapper):
 
     def get_vocabulary(self) -> list[str]:
         """
+        Returns the list of vocabulary tokens.
         Returns:
             (list[str]) list of vocabulary tokens.
         """
@@ -60,6 +65,7 @@ class RNNTInferenceWrapper(ASRInferenceWrapper):
 
     def get_subsampling_factor(self) -> int:
         """
+        Returns the subsampling factor for the ASR encoder.
         Returns:
             (int) subsampling factor for the ASR encoder model.
         """
@@ -72,7 +78,7 @@ class RNNTInferenceWrapper(ASRInferenceWrapper):
             processed_signal: (Tensor) processed signal. Shape is torch.Size([B, C, T]).
             processed_signal_length: (Tensor) processed signal length. Shape is torch.Size([B]).
         Returns:
-            encoder_output: (Tensor) encoder output. Shape is torch.Size([B, T, D]).
+            (tuple[Tensor, Tensor]) encoder output and encoder output length of shape torch.Size([B, T, D]), torch.Size([B]).
         """
         if processed_signal.device != self.device:
             processed_signal = processed_signal.to(self.device)
@@ -95,7 +101,7 @@ class RNNTInferenceWrapper(ASRInferenceWrapper):
 
     def decode(self, encoded: Tensor, encoded_len: Tensor, partial_hypotheses: list) -> list:
         """
-        RNNT decoding function
+        Decode the encoder output using the RNNT decoder.
         Args:
             encoded: (Tensor) encoder output.
             encoded_len: (Tensor) encoder output length.

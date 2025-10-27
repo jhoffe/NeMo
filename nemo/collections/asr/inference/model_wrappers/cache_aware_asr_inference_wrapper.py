@@ -19,9 +19,16 @@ from nemo.collections.asr.inference.model_wrappers.asr_inference_wrapper import 
 
 
 class CacheAwareASRInferenceWrapper(ASRInferenceWrapper):
+    """
+    Base class for Cache-Aware inference wrappers.
+    It provides a common interface for Cache-Aware models.
+    Derived classes MUST implement the following methods:
+        - stream_step: Executes a single streaming step.
+    """
 
     def get_input_features(self) -> int:
         """
+        Returns the number of channels in the input features.
         Returns:
             (int) number of channels in the input features.
         """
@@ -42,6 +49,7 @@ class CacheAwareASRInferenceWrapper(ASRInferenceWrapper):
 
     def get_initial_cache_state(self, batch_size: int) -> tuple[Tensor, Tensor, Tensor]:
         """
+        Returns the initial cache state for the encoder.
         Returns:
             (tuple[Tensor, Tensor, Tensor]) the initial cache state of the encoder.
         """
@@ -49,6 +57,7 @@ class CacheAwareASRInferenceWrapper(ASRInferenceWrapper):
 
     def get_drop_extra_pre_encoded(self) -> int:
         """
+        Returns the number of extra pre-encoded frames to drop.
         Returns:
             (int) drop_extra_pre_encoded.
         """
@@ -56,6 +65,7 @@ class CacheAwareASRInferenceWrapper(ASRInferenceWrapper):
 
     def get_chunk_size(self) -> list[int] | int:
         """
+        Returns the chunk size for the encoder.
         Returns:
             (list[int] | int) the chunk size.
         """
@@ -63,6 +73,7 @@ class CacheAwareASRInferenceWrapper(ASRInferenceWrapper):
 
     def get_shift_size(self) -> list[int] | int:
         """
+        Returns the shift size for the encoder.
         Returns:
             (list[int] | int) the shift size.
         """
@@ -70,6 +81,7 @@ class CacheAwareASRInferenceWrapper(ASRInferenceWrapper):
 
     def get_pre_encode_cache_size(self) -> list[int] | int:
         """
+        Returns the pre-encode cache size for the encoder.
         Returns:
             (list[int] | int) the pre_encode cache size.
         """
@@ -77,6 +89,7 @@ class CacheAwareASRInferenceWrapper(ASRInferenceWrapper):
 
     def get_subsampling_factor(self) -> int:
         """
+        Returns the subsampling factor for the ASR encoder.
         Returns:
             (int) subsampling factor for the ASR encoder model.
         """
@@ -84,8 +97,9 @@ class CacheAwareASRInferenceWrapper(ASRInferenceWrapper):
 
     def get_att_context_size(self) -> list:
         """
+        Returns the attention context size for the encoder.
         Returns:
-            (list) the attention context size.
+            (list) copy of the attention context size.
         """
         return self.asr_model.encoder.att_context_size.copy()
 

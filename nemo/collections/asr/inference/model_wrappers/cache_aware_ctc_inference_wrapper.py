@@ -25,6 +25,9 @@ from nemo.collections.asr.parts.mixins.streaming import StreamingEncoder
 
 
 class CacheAwareCTCInferenceWrapper(CacheAwareASRInferenceWrapper):
+    """
+    Provides a unified interface to work with Cache-Aware CTC models.
+    """
 
     def __post_init__(self) -> None:
         """
@@ -56,6 +59,7 @@ class CacheAwareCTCInferenceWrapper(CacheAwareASRInferenceWrapper):
 
     def get_blank_id(self) -> int:
         """
+        Returns id of the blank token.
         Returns:
             (int) blank id for the model.
         """
@@ -67,6 +71,7 @@ class CacheAwareCTCInferenceWrapper(CacheAwareASRInferenceWrapper):
 
     def get_vocabulary(self) -> list[str]:
         """
+        Returns the list of vocabulary tokens.
         Returns:
             (list[str]) list of vocabulary tokens.
         """
