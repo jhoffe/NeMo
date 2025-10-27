@@ -19,6 +19,10 @@ from nemo.collections.asr.inference.streaming.framing.request import Frame
 
 
 class AudioBufferer:
+    """
+    Audio bufferer class
+    It buffers the audio chunks and maintains the buffer.
+    """
 
     def __init__(self, sample_rate: int, buffer_size_in_secs: float):
         """
@@ -69,6 +73,10 @@ class AudioBufferer:
 
 
 class BatchedAudioBufferer:
+    """
+    Batched audio bufferer class
+    It buffers the audio chunks from multiple streams and returns the buffers.
+    """
 
     def __init__(self, sample_rate: int, buffer_size_in_secs: float):
         """
@@ -101,8 +109,9 @@ class BatchedAudioBufferer:
         Args:
             frames (list[Frame]): list of frames
         Returns:
-            audio_buffers (list[Tensor]): List of buffered audio tensors, one per input frame
-            left_paddings (list[int]): List of left paddings, one per input frame
+            tuple[list[Tensor], list[int]]:
+                buffers: list of buffered audio tensors, one per input frame
+                left_paddings: list of left paddings, one per input frame
         """
         buffers, left_paddings = [], []
         for frame in frames:

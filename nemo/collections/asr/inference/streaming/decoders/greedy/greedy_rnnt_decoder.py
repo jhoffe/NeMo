@@ -21,6 +21,7 @@ from nemo.collections.asr.inference.streaming.decoders.greedy.greedy_decoder imp
 
 
 class RNNTGreedyDecoder(GreedyDecoder):
+    """RNNT Greedy decoder class"""
 
     def __init__(self, vocabulary: list[str], conf_func: Callable = None):
         """
@@ -37,8 +38,20 @@ class RNNTGreedyDecoder(GreedyDecoder):
         tokens: torch.Tensor | list[int],
         length: int,
         offset: int = 0,
-    ):
-        """Decode the RNNT hypothesis using timestamps"""
+    ) -> tuple[dict, list[int], int]:
+        """
+        Decode the RNNT hypothesis using timestamps
+        Args:
+            global_timestamps (torch.Tensor | list[int]): global timestamps since the start of the stream
+            tokens (torch.Tensor | list[int]): tokens since the start of the stream
+            length (int): length of the alignment
+            offset (int): offset to apply to the timestamps to make them local
+        Returns:
+            tuple[dict, list[int], int]:
+                output: dictionary containing the decoded tokens, timestamps, and confidences
+                current labels: list of current labels including the blank token
+                new offset: new offset value for the next decoding step
+        """
         if isinstance(global_timestamps, list):
             global_timestamps = torch.tensor(global_timestamps)
         if isinstance(tokens, list):
@@ -69,6 +82,10 @@ class RNNTGreedyDecoder(GreedyDecoder):
 
 
 class ClippedRNNTGreedyDecoder:
+    """
+    Clipped RNNT Greedy decoder class
+    Decodes the tokens within a given clip range and returns the clipped tokens and timestamps.
+    """
 
     def __init__(self, vocabulary: list[str], tokens_per_frame: int, conf_func: Callable = None, endpointer=None):
         """

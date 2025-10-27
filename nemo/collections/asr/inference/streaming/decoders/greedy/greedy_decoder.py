@@ -19,6 +19,7 @@ from nemo.collections.asr.inference.utils.constants import SENTENCEPIECE_UNDERSC
 
 
 class GreedyDecoder:
+    """Base class for the greedy decoder"""
 
     def __init__(self, vocabulary: list[str], conf_func: Callable = None):
         """

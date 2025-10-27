@@ -22,6 +22,9 @@ class CacheAwareStreamingState(StreamingState):
     """
 
     def __init__(self):
+        """
+        Initialize the CacheAwareStreamingState
+        """
         super().__init__()
         self._additional_params_reset()
 

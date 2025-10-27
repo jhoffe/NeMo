@@ -25,6 +25,10 @@ from nemo.collections.asr.models import ASRModel
 
 
 class CacheFeatureBufferer:
+    """
+    Cache feature bufferer class
+    It buffers the feature chunks and maintains the buffer.
+    """
 
     def __init__(
         self,
@@ -177,6 +181,10 @@ class CacheFeatureBufferer:
 
 
 class BatchedCacheFeatureBufferer:
+    """
+    Batched cache feature bufferer class
+    It buffers the feature chunks from multiple streams and maintains the buffers.
+    """
 
     def __init__(
         self,
@@ -227,8 +235,9 @@ class BatchedCacheFeatureBufferer:
         Args:
             frames (list[Frame]): list of frames
         Returns:
-            feature_buffers (list[torch.Tensor]): List of feature buffers, one per input frame
-            right_paddings (list[int]): List of right paddings, one per input frame
+            tuple[list[torch.Tensor], list[int]]:
+                feature_buffers: list of feature buffers, one per input frame
+                right_paddings: list of right paddings, one per input frame
         """
         fbuffers = []
         right_paddings = []

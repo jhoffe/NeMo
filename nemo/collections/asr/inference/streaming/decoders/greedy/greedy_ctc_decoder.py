@@ -20,6 +20,7 @@ from nemo.collections.asr.inference.streaming.decoders.greedy.greedy_decoder imp
 
 
 class CTCGreedyDecoder(GreedyDecoder):
+    """CTC Greedy decoder class"""
 
     def __init__(self, vocabulary: list[str], conf_func: Callable = None):
         """
@@ -88,6 +89,10 @@ class CTCGreedyDecoder(GreedyDecoder):
 
 
 class ClippedCTCGreedyDecoder:
+    """
+    Clipped CTC Greedy decoder class
+    Decodes the tokens within a given clip range and returns the clipped tokens and timestamps.
+    """
 
     def __init__(self, vocabulary: list[str], tokens_per_frame: int, conf_func: Callable = None, endpointer=None):
         """

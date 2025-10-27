@@ -19,6 +19,7 @@ from nemo.collections.asr.inference.utils.endpointing_utils import get_custom_st
 
 
 class GreedyEndpointing:
+    """Greedy endpointing for the streaming ASR pipelines"""
 
     def __init__(
         self,

@@ -21,16 +21,18 @@ from nemo.collections.asr.inference.utils.audio_io import read_audio
 
 class MonoStream(Stream):
     """
-    Stream for mono wav files
-    Args:
-        rate (int): sampling rate
-        frame_size_in_secs (int): frame length in seconds
-        stream_id (int): stream id
-    Returns:
-        Iterates over the frames of the audio file
+    Streamer for mono wav files.
+    Iterates over the frames of the audio file
     """
 
     def __init__(self, rate: int, frame_size_in_secs: float, stream_id: int, pad_last_frame: bool = False):
+        """
+        Initialize the MonoStream
+        Args:
+            rate (int): sampling rate
+            frame_size_in_secs (int): frame length in seconds
+            stream_id (int): stream id
+        """
 
         self.rate = rate
         self.frame_size = int(frame_size_in_secs * rate)
@@ -45,7 +47,7 @@ class MonoStream(Stream):
         """
         Load the audio file either from a file or from a torch tensor
         Args:
-            audio (str or torch.Tensor): audio file path or torch tensor of audio samples
+            audio (str | torch.Tensor): audio file path or torch tensor of audio samples
             options (RequestOptions | None): optional options for the request
         """
         if isinstance(audio, str):

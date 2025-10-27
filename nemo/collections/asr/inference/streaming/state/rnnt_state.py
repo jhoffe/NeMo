@@ -21,6 +21,9 @@ class RNNTStreamingState(StreamingState):
     """
 
     def __init__(self):
+        """
+        Initialize the RNNTStreamingState
+        """
         super().__init__()
         self._additional_params_reset()
 

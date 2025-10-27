@@ -18,6 +18,7 @@ from nemo.collections.asr.inference.streaming.endpointing.greedy.greedy_endpoint
 
 
 class RNNTGreedyEndpointing(GreedyEndpointing):
+    """Greedy endpointing for the streaming RNNT pipeline"""
 
     def __init__(
         self,

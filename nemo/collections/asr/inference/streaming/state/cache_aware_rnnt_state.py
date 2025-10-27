@@ -23,6 +23,9 @@ class CacheAwareRNNTStreamingState(CacheAwareStreamingState):
     """
 
     def __init__(self):
+        """
+        Initialize the CacheAwareRNNTStreamingState
+        """
         super().__init__()
         self._additional_params_reset()
 

@@ -26,6 +26,8 @@ from nemo.collections.asr.inference.utils.progressbar import ProgressBar
 
 
 class MultiStream:
+    """MultiStreamer for multiple streams"""
+
     def __init__(self, n_frames_per_stream: int):
         """
         Args:

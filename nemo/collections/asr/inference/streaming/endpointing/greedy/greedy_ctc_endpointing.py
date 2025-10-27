@@ -19,6 +19,7 @@ from nemo.collections.asr.inference.streaming.endpointing.greedy.greedy_endpoint
 
 
 class CTCGreedyEndpointing(GreedyEndpointing):
+    """Greedy endpointing for the streaming CTC pipeline"""
 
     def __init__(
         self,

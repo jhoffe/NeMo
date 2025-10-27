@@ -20,6 +20,10 @@ from nemo.collections.asr.inference.utils.constants import LOG_MEL_ZERO
 
 
 class FeatureBufferer:
+    """
+    Feature bufferer class
+    It buffers the feature chunks and maintains the buffer.
+    """
 
     def __init__(
         self,
@@ -88,6 +92,10 @@ class FeatureBufferer:
 
 
 class BatchedFeatureBufferer:
+    """
+    Batched feature bufferer class
+    It buffers the feature chunks from multiple streams and maintains the buffers.
+    """
 
     def __init__(
         self,
@@ -128,7 +136,7 @@ class BatchedFeatureBufferer:
         Args:
             fbuffers (list[FeatureBuffer]): list of feature buffers
         Returns:
-            feature_buffers (list[torch.Tensor]): List of feature buffers, one per input frame
+            list[torch.Tensor]: list of feature buffers, one per input frame
         """
         result_buffers = []
         for fbuffer in fbuffers:

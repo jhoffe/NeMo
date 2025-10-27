@@ -31,7 +31,14 @@ KEEP_LAST_N_WORDS = 30
 
 
 class StreamingState:
+    """
+    Generic state for the streaming ASR pipeline
+    """
+
     def __init__(self):
+        """
+        Initialize the StreamingState
+        """
         self._reset_streaming_state()
 
     def reset(self) -> None:
