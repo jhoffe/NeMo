@@ -769,7 +769,7 @@ class SaveRestoreConnector:
 
         """
         try:
-            torch.load(model_weights, map_location=map_location, weights_only=True)
+            return torch.load(model_weights, map_location=map_location, weights_only=True)
         except Exception as e:
             logging.error(f"Failed to load checkpoint with weights_only=True: {e}")
             raise e
