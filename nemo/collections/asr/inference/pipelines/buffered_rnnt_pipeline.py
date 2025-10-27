@@ -391,6 +391,7 @@ class BufferedRNNTPipeline(BasePipeline):
         if not all_rnnt_states_are_none:
             batched_rnnt_states = self.decoding_computer.merge_to_batched_state(rnnt_states)
 
+        batched_state = None
         if self.tokens_per_right_padding > 0:
             with torch.inference_mode(), torch.no_grad():
                 best_hyp_chunk, alignments, batched_state = self.decoding_computer(
@@ -398,7 +399,7 @@ class BufferedRNNTPipeline(BasePipeline):
                 )
 
         best_hyp = self.asr_model.decode(encs, enc_lens, partial_hypotheses=partial_hypotheses)
-        if self.tokens_per_right_padding > 0:
+        if self.tokens_per_right_padding > 0 and batched_state is not None:
             for state, rnnt_state in zip(states, self.decoding_computer.split_batched_state(batched_state)):
                 state.hyp_decoding_state = rnnt_state
         else:
