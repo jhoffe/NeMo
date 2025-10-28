@@ -40,7 +40,6 @@ from nemo.collections.asr.inference.utils.pipeline_utils import (
 
 if TYPE_CHECKING:
     from nemo.collections.asr.inference.itn.inverse_normalizer import AlignmentPreservingInverseNormalizer
-    from nemo.collections.asr.inference.pnc.punctuation_capitalizer import PunctuationCapitalizer
 
 
 class BufferedCTCPipeline(BasePipeline):
@@ -50,7 +49,6 @@ class BufferedCTCPipeline(BasePipeline):
         self,
         cfg: DictConfig,
         asr_model: CTCInferenceWrapper,
-        pnc_model: PunctuationCapitalizer | None = None,
         itn_model: AlignmentPreservingInverseNormalizer | None = None,
     ):
         """
@@ -58,7 +56,6 @@ class BufferedCTCPipeline(BasePipeline):
         Args:
             cfg: (DictConfig) Configuration parameters.
             asr_model: (CTCInferenceWrapper) ASR model.
-            pnc_model: (PunctuationCapitalizer | None) Punctuation/Capitalization restoration model.
             itn_model: (AlignmentPreservingInverseNormalizer | None) Inverse Text Normalization model.
         """
         self.copy_asr_model_attributes(asr_model)
@@ -68,7 +65,7 @@ class BufferedCTCPipeline(BasePipeline):
         self.init_endpointer()
         self.init_bpe_decoder()
         self.init_greedy_ctc_decoder()
-        self.init_text_processor(cfg, pnc_model, itn_model)
+        self.init_text_processor(cfg, itn_model)
         super().__init__()
 
     def init_parameters(self, cfg: DictConfig) -> None:

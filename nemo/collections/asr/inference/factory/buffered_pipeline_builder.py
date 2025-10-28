@@ -24,6 +24,10 @@ from nemo.utils import logging
 
 
 class BufferedPipelineBuilder(BaseBuilder):
+    """
+    Buffered Pipeline Builder class.
+    Builds the buffered CTC/RNNT/TDT pipelines.
+    """
 
     @classmethod
     def build(cls, cfg: DictConfig) -> BufferedRNNTPipeline | BufferedCTCPipeline:
@@ -94,21 +98,12 @@ class BufferedPipelineBuilder(BaseBuilder):
         # building ASR model
         decoding_cfg = cls.get_rnnt_decoding_cfg(cfg)
         asr_model = cls._build_asr(cfg, decoding_cfg)
-        logging.info(f"ASR model `{cfg.asr.model_name}` loaded")
-
-        # building PnC model
-        asr_supports_pnc = asr_model.supports_punctuation()
-        pnc_model = cls._build_pnc(cfg, asr_supports_pnc=asr_supports_pnc)
-        if pnc_model is not None:
-            logging.info(f"PnC model `{cfg.pnc.model_name}` loaded")
 
         # building ITN model
         itn_model = cls._build_itn(cfg, input_is_lower_cased=True)
-        if itn_model is not None:
-            logging.info("ITN model loaded")
 
         # building RNNT pipeline
-        rnnt_pipeline = BufferedRNNTPipeline(cfg, asr_model, pnc_model, itn_model)
+        rnnt_pipeline = BufferedRNNTPipeline(cfg, asr_model, itn_model)
         logging.info(f"`{type(rnnt_pipeline).__name__}` pipeline loaded")
         return rnnt_pipeline
 
@@ -124,20 +119,11 @@ class BufferedPipelineBuilder(BaseBuilder):
         # building ASR model
         decoding_cfg = cls.get_ctc_decoding_cfg()
         asr_model = cls._build_asr(cfg, decoding_cfg)
-        logging.info(f"ASR model `{cfg.asr.model_name}` loaded")
-
-        # building PnC model
-        asr_supports_pnc = asr_model.supports_punctuation()
-        pnc_model = cls._build_pnc(cfg, asr_supports_pnc=asr_supports_pnc)
-        if pnc_model is not None:
-            logging.info(f"PnC model `{cfg.pnc.model_name}` loaded")
 
         # building ITN model
         itn_model = cls._build_itn(cfg, input_is_lower_cased=True)
-        if itn_model is not None:
-            logging.info("ITN model loaded")
 
         # building CTC pipeline
-        ctc_pipeline = BufferedCTCPipeline(cfg, asr_model, pnc_model, itn_model)
+        ctc_pipeline = BufferedCTCPipeline(cfg, asr_model, itn_model)
         logging.info(f"`{type(ctc_pipeline).__name__}` pipeline loaded")
         return ctc_pipeline

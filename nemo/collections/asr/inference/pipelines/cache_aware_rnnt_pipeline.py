@@ -42,7 +42,6 @@ from nemo.collections.asr.parts.utils.rnnt_utils import Hypothesis
 
 if TYPE_CHECKING:
     from nemo.collections.asr.inference.itn.inverse_normalizer import AlignmentPreservingInverseNormalizer
-    from nemo.collections.asr.inference.pnc.punctuation_capitalizer import PunctuationCapitalizer
 
 
 class CacheAwareRNNTPipeline(BasePipeline):
@@ -52,7 +51,6 @@ class CacheAwareRNNTPipeline(BasePipeline):
         self,
         cfg: DictConfig,
         asr_model: CacheAwareRNNTInferenceWrapper,
-        pnc_model: PunctuationCapitalizer | None = None,
         itn_model: AlignmentPreservingInverseNormalizer | None = None,
     ):
         """
@@ -60,7 +58,6 @@ class CacheAwareRNNTPipeline(BasePipeline):
         Args:
             cfg: (DictConfig) Configuration parameters.
             asr_model: (CacheAwareRNNTInferenceWrapper) ASR model.
-            pnc_model: (PunctuationCapitalizer | None) Punctuation/Capitalization restoration model.
             itn_model: (AlignmentPreservingInverseNormalizer | None) Inverse Text Normalization model.
         """
         self.copy_asr_model_attributes(asr_model)
@@ -71,7 +68,7 @@ class CacheAwareRNNTPipeline(BasePipeline):
         self.init_bpe_decoder()
         self.init_greedy_rnnt_decoder()
         self.init_endpointer()
-        self.init_text_processor(cfg, pnc_model, itn_model)
+        self.init_text_processor(cfg, itn_model)
         super().__init__()
 
     def init_parameters(self, cfg: DictConfig) -> None:

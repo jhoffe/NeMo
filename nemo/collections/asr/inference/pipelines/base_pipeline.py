@@ -42,7 +42,6 @@ from nemo.collections.common.tokenizers.tokenizer_spec import TokenizerSpec
 
 if TYPE_CHECKING:
     from nemo.collections.asr.inference.itn.inverse_normalizer import AlignmentPreservingInverseNormalizer
-    from nemo.collections.asr.inference.pnc.punctuation_capitalizer import PunctuationCapitalizer
 
 
 class PipelineOutput:
@@ -153,7 +152,6 @@ class BasePipeline(PipelineInterface):
         self.blank_id = asr_model.get_blank_id()
         self.vocabulary = asr_model.get_vocabulary()
         self.sep = asr_model.word_separator
-        self.segment_separators = asr_model.segment_separators
         self.underscore_id = asr_model.underscore_id
         self.punctuation_ids = asr_model.punctuation_ids
         self.language_token_ids = asr_model.language_token_ids
@@ -212,10 +210,14 @@ class BasePipeline(PipelineInterface):
     def init_text_processor(
         self,
         cfg: DictConfig,
-        pnc_model: PunctuationCapitalizer | None,
         itn_model: AlignmentPreservingInverseNormalizer | None,
     ) -> None:
-        """Initialize the text processor."""
+        """
+        Initialize the text processor.
+        Args:
+            cfg: (DictConfig) Configuration parameters.
+            itn_model: (AlignmentPreservingInverseNormalizer | None) Inverse Text Normalization model.
+        """
         check_existance_of_required_attributes(
             self,
             [
@@ -223,20 +225,16 @@ class BasePipeline(PipelineInterface):
                 'supports_punctuation',
                 'confidence_aggregator',
                 'sep',
-                'segment_separators',
             ],
         )
 
         self.text_processor = StreamingTextProcessor(
-            pnc_cfg=cfg.pnc,
             itn_cfg=cfg.itn,
-            pnc_model=pnc_model,
             itn_model=itn_model,
             asr_supported_puncts=self.asr_supported_puncts,
             asr_supports_punctuation=self.supports_punctuation,
             confidence_aggregator=self.confidence_aggregator,
             sep=self.sep,
-            segment_separators=self.segment_separators,
             enable_pnc=cfg.enable_pnc,
             enable_itn=cfg.enable_itn,
         )

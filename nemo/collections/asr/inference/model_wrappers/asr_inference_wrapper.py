@@ -95,15 +95,6 @@ class ASRInferenceWrapper:
             raise RuntimeError(f"Failed to load model {model_name}: {str(e)}")
 
     @property
-    def segment_separators(self) -> list[str]:
-        """
-        Returns segment separators.
-        Returns:
-            (list[str]) list of segment separators.
-        """
-        return self.decoding_cfg.segment_seperators
-
-    @property
     def word_separator(self) -> str:
         """
         Returns word separator.

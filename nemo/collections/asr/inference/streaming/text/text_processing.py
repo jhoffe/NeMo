@@ -27,11 +27,9 @@ from nemo.collections.asr.inference.utils.pipeline_utils import (
     get_repeated_punctuation_regex_pattern,
 )
 from nemo.collections.asr.inference.utils.text_segment import Word, normalize_segments_inplace
-from nemo.utils import logging
 
 if TYPE_CHECKING:
     from nemo.collections.asr.inference.itn.inverse_normalizer import AlignmentPreservingInverseNormalizer
-    from nemo.collections.asr.inference.pnc.punctuation_capitalizer import PunctuationCapitalizer
 
 
 class StreamingTextProcessor:
@@ -40,21 +38,17 @@ class StreamingTextProcessor:
     inverse text normalization (ITN) to ASR transcriptions in real-time.
 
     This class supports configurable pipelines where PnC and ITN can be enabled/disabled dynamically.
-    It ensures that the final output adheres to proper punctuation, capitalization, and normalized text
-    formatting by leveraging a PnC model and a WFST-based ITN model.
+    It ensures that the final output adheres to proper punctuation, capitalization, and normalized text.
     """
 
     def __init__(
         self,
-        pnc_cfg: DictConfig,
         itn_cfg: DictConfig,
-        pnc_model: PunctuationCapitalizer | None,
         itn_model: AlignmentPreservingInverseNormalizer | None,
         asr_supported_puncts: set,
         asr_supports_punctuation: bool,
         confidence_aggregator: Callable,
         sep: str,
-        segment_separators: list[str],
         enable_pnc: bool = False,
         enable_itn: bool = False,
     ):
@@ -62,36 +56,18 @@ class StreamingTextProcessor:
         Initialize the streaming text processor.
 
         Args:
-            pnc_cfg (DictConfig): PnC parameters.
             itn_cfg (DictConfig): ITN parameters.
-            pnc_model (PunctuationCapitalizer | None): Model for punctuation and capitalization (PnC).
             itn_model (AlignmentPreservingInverseNormalizer | None): Model for inverse text normalization (ITN).
             asr_supported_puncts (set): Set of punctuation marks recognized by the ASR model.
             asr_supports_punctuation (bool): Boolean indicating if the ASR model outputs punctuation.
             confidence_aggregator (Callable): Function for aggregating confidence scores.
             sep (str): String separator used in ASR output processing.
-            segment_separators (list[str]): List of characters used as segment boundaries.
             enable_pnc (bool): Boolean to enable PnC. Default is False.
             enable_itn (bool): Boolean to enable ITN. Default is False.
         """
 
-        self.pnc_model = pnc_model
-        self.pnc_enabled = False
-        if enable_pnc:
-            self.pnc_enabled = pnc_model is not None or asr_supports_punctuation
-
-        self.force_to_use_pnc_model = pnc_cfg.force_to_use_pnc_model
-        if self.pnc_model is None:
-            self.force_to_use_pnc_model = False
-
+        self.pnc_enabled = enable_pnc and asr_supports_punctuation
         self.supports_punctuation = asr_supports_punctuation
-        self.pnc_runtime_params = {
-            "batch_size": pnc_cfg.batch_size,
-            "max_seq_length": pnc_cfg.max_seq_length,
-            "step": pnc_cfg.step,
-            "margin": pnc_cfg.margin,
-        }
-        self.pnc_left_padding_search_size = pnc_cfg.left_padding_search_size
 
         self.itn_model = itn_model
         self.itn_enabled = False
@@ -107,14 +83,11 @@ class StreamingTextProcessor:
         self.asr_supported_puncts = asr_supported_puncts
         self.asr_supported_puncts_str = ''.join(self.asr_supported_puncts)
         self.sep = sep
-        self.segment_separators = segment_separators
         self.rm_punctuation_capitalization_from_segments_fn = partial(
             normalize_segments_inplace, punct_marks=self.asr_supported_puncts, sep=self.sep
         )
 
         puncts_to_process = self.asr_supported_puncts
-        if self.pnc_model is not None:
-            puncts_to_process = puncts_to_process | self.pnc_model.supported_punctuation
         self.leading_punctuation_regex_pattern = get_leading_punctuation_regex_pattern(puncts_to_process)
         self.repeated_punctuation_regex_pattern = get_repeated_punctuation_regex_pattern(puncts_to_process)
 
@@ -143,20 +116,6 @@ class StreamingTextProcessor:
     def is_enabled(self) -> bool:
         """Check if PnC or ITN is enabled"""
         return self.is_pnc_enabled() or self.is_itn_enabled()
-
-    def add_pnc_to_words(self, words_list: list[list[Word]], pnc_params: DictConfig) -> list[list[Word]]:
-        """
-        Run the Punctuation and Capitalization model on the words.
-        Args:
-            words_list: (list[list[Word]]) List of words
-            pnc_params: (DictConfig) Runtime parameters for the PNC model
-        Returns:
-            (list[list[Word]]) List of words after applying the PnC model
-        """
-        if self.pnc_model is None:
-            logging.info("PnC model is not provided. Skipping PnC.")
-            return words_list
-        return self.pnc_model.add_punctuation_capitalization_to_words(words_list, pnc_params, sep=self.sep)
 
     def process(self, states: list[StreamingState]) -> None:
         """
@@ -233,35 +192,7 @@ class StreamingTextProcessor:
                 for (i, j, _), processed_text in zip(texts, processed_texts):
                     states_with_text[i].segments[j].text = processed_text
 
-        # Apply PnC
-        if self.is_pnc_enabled():  # If PnC ENABLED globally
-            texts = []
-            for i, state in enumerate(states_with_text):
-                # if PnC is disabled for this state
-                if not state.options.enable_pnc:
-                    continue
-
-                # if ASR does not support PnC -> process the text
-                # or
-                # if ASR supports PnC but we force to use the BERT-based PnC model -> process the text
-                should_process = not self.supports_punctuation
-                if self.supports_punctuation and self.force_to_use_pnc_model:
-                    should_process = True
-
-                if should_process:
-                    for j, seg in enumerate(state.segments):
-                        if state.processed_segment_mask[j]:  # if the segment is already processed, skip it
-                            continue
-                        texts.append((i, j, seg.text))
-
-            if len(texts) > 0:
-                # apply PnC
-                processed_texts = self.pnc_model.add_punctuation_capitalization_list(
-                    transcriptions=[text for _, _, text in texts], params=self.pnc_runtime_params
-                )
-                # update states with PnC-processed texts
-                for (i, j, _), processed_text in zip(texts, processed_texts):
-                    states_with_text[i].segments[j].text = processed_text
+        # --> Apply External PnC here (if needed)
 
         # mark all segments as processed
         for state in states_with_text:
@@ -288,34 +219,11 @@ class StreamingTextProcessor:
             self.handle_plain_asr_transcriptions(states, indices, asr_words_list)
             return
 
-        # Apply Punctuation and Capitalization (PnC)
-        pnc_words_list = [None] * len(asr_words_list)
-        subset_to_punctuate, subset_indices = [], []
-        for idx, jdx, _, _ in indices:
-            if states[idx].options.enable_pnc:
-                subset_to_punctuate.append(asr_words_list[jdx])
-                subset_indices.append(jdx)
-            else:
-                # if PnC is disabled for particular states, remove PnC from the words if ASR supports punctuation
-                if self.supports_punctuation:
-                    self.rm_punctuation_capitalization_from_segments_fn(asr_words_list[jdx])
-                pnc_words_list[jdx] = asr_words_list[jdx]
-
-        for jdx, pnc_words in zip(subset_indices, self.apply_pnc(subset_to_punctuate)):
-            pnc_words_list[jdx] = pnc_words
-
-        # Update states with PnC results
-        for idx, jdx, z, n_x in indices:
-            state = states[idx]
-            z = z - n_x
-            if state.options.enable_pnc and n_x > 0:
-                # Handle the first word of the response
-                first_word: Word = pnc_words_list[jdx][-z]
-                prev_word: Word = pnc_words_list[jdx][-z - 1] if abs(-z - 1) <= len(pnc_words_list[jdx]) else None
-                if prev_word is not None:
-                    if prev_word.text[-1] in POST_WORD_PUNCTUATION:
-                        first_word.capitalize()
-            states[idx].pnc_words[-z:] = pnc_words_list[jdx][-z:]
+        # Keep or remove PnC from the words
+        for idx, jdx, z in indices:
+            if not states[idx].options.enable_pnc and self.supports_punctuation:
+                self.rm_punctuation_capitalization_from_segments_fn(asr_words_list[jdx])
+            states[idx].pnc_words[-z:] = asr_words_list[jdx][-z:]
 
         # If ITN is disabled globally, do nothing
         if not self.itn_enabled:
@@ -335,12 +243,11 @@ class StreamingTextProcessor:
             states (list[StreamingState]): List of StreamingState objects to be updated.
             indices (list[tuple]): Indices of words within states that need realignment.
         """
-        for idx, _, z, n_x in indices:
+        for idx, _, z in indices:
             state = states[idx]
             if not state.options.enable_itn:
                 continue
 
-            z = z - n_x
             z_idx = len(state.words) - z
 
             itn_idx = len(state.itn_words)
@@ -376,14 +283,13 @@ class StreamingTextProcessor:
 
     def prepare_asr_words(self, states: list[StreamingState]) -> tuple[list[tuple], list[list[Word]]]:
         """
-        Prepare words for applying PnC and ITN.
         Find the indices of the states that have words to process.
-        Calculate the number of words to look back for PnC.
         Args:
             states: (list[StreamingState]) List of StreamingState objects
         Returns:
-            list[tuple]: List of indices of the states that have words to process
-            list[list[Word]]: Batch of words to process
+            tuple[list[tuple], list[list[Word]]]:
+                indices: list of indices of the states that have words to process
+                asr_words_list: list of words to process
         """
         indices, asr_words_list = [], []
 
@@ -392,51 +298,13 @@ class StreamingTextProcessor:
             if (n_not_punctuated_words := len(state.words) - len(state.pnc_words)) == 0:
                 continue
 
-            n_word_lookback = 0
-            if self.pnc_enabled:
-                n_word_lookback = self.calculate_pnc_lookback(state.pnc_words)
-
-            # if no lookback words is found, use the context before response
-            n_additional_context = 0
-            if n_word_lookback == 0 and len(state.context_before_response) > 0:
-                n_additional_context = min(len(state.context_before_response), self.pnc_left_padding_search_size)
-
-            # Prepare words with additional context
-            if n_additional_context == 0:
-                z = n_not_punctuated_words + n_word_lookback
-                words_list = [word.copy() for word in state.words[-z:]]
-            else:
-                words_list = [
-                    word.copy()
-                    for word in state.context_before_response[-n_additional_context:]
-                    + state.words[-n_not_punctuated_words:]
-                ]
-
+            words_list = [word.copy() for word in state.words[-n_not_punctuated_words:]]
             asr_words_list.append(words_list)
             state.pnc_words.extend([None] * n_not_punctuated_words)
-            indices.append((idx, jdx, len(words_list), n_additional_context))
+            indices.append((idx, jdx, len(words_list)))
             jdx += 1
 
         return indices, asr_words_list
-
-    def calculate_pnc_lookback(self, pnc_words: list[Word]) -> int:
-        """
-        Calculate the number of words to look back for PnC.
-        Args:
-            pnc_words: (list[Word]) List of punctuated words
-        Returns:
-            (int) Number of words to look back for PnC
-        """
-        if len(pnc_words) == 0:
-            return 0
-
-        lookback = 0
-        for ix, word in enumerate(reversed(pnc_words), start=1):
-            if word.text and word.text[-1] in self.segment_separators:
-                lookback = ix - 1
-            if ix == self.pnc_left_padding_search_size:
-                break
-        return lookback
 
     def handle_plain_asr_transcriptions(
         self, states: list[StreamingState], indices: list[tuple], asr_words_list: list[list[Word]]
@@ -444,37 +312,16 @@ class StreamingTextProcessor:
         """
         Handle scenarios where PnC and ITN are disabled.
         In such cases, remove Punctuation and Capitalization from the words.
+        Args:
+            states: (list[StreamingState]) List of StreamingState objects
+            indices: (list[tuple]) List of indices of the states that have words to process
+            asr_words_list: (list[list[Word]]) List of words
         """
         if self.supports_punctuation:
             self.rm_punctuation_capitalization_from_segments_fn(asr_words_list)
 
-        for idx, jdx, z, n_x in indices:
-            z = z - n_x
+        for idx, jdx, z in indices:
             states[idx].pnc_words[-z:] = asr_words_list[jdx][-z:]
-
-    def apply_pnc(self, asr_words_list: list[list[Word]]) -> list[list[Word]]:
-        """
-        Apply Punctuation and Capitalization (PnC) on the words.
-        If PnC is disabled, remove Punctuation and Capitalization from the words.
-        If force_to_use_pnc_model is enabled, force to use the BERT-based PnC model.
-        Args:
-            asr_words_list: (list[list[Word]]) List of words
-        Returns:
-            (list[list[Word]]) List of words after applying the PnC model
-        """
-        if self.pnc_enabled:
-            if self.force_to_use_pnc_model:
-                logging.info("Forcing to use BERT-based PnC model.")
-                if self.supports_punctuation:
-                    self.rm_punctuation_capitalization_from_segments_fn(asr_words_list)
-                return self.add_pnc_to_words(asr_words_list, self.pnc_runtime_params)
-
-            if not self.supports_punctuation:
-                return self.add_pnc_to_words(asr_words_list, self.pnc_runtime_params)
-
-        elif self.supports_punctuation:
-            self.rm_punctuation_capitalization_from_segments_fn(asr_words_list)
-        return asr_words_list
 
     def apply_itn(self, states: list[StreamingState], indices: list[tuple]) -> None:
         """
@@ -486,7 +333,7 @@ class StreamingTextProcessor:
         """
         itn_indices, asr_words_list, pnc_words_list = [], [], []
         jdx = 0
-        for state_idx, _, _, _ in indices:
+        for state_idx, _, _ in indices:
             state = states[state_idx]
             if not state.options.enable_itn:
                 continue
@@ -524,7 +371,11 @@ class StreamingTextProcessor:
     def update_itn_words(states: list[StreamingState], output: list[tuple], indices: list[tuple]) -> None:
         """
         Update the states with the ITN results.
-        Update word_alignment and itn_words.
+        Updates the word_alignment and itn_words in the states.
+        Args:
+            states: (list[StreamingState]) List of StreamingState objects
+            output: (list[tuple]) List of output tuples containing the spans and alignment
+            indices: (list[tuple]) List of indices of the states that have words to process
         """
         for state_idx, jdx, s, t, cut_point in indices:
             state = states[state_idx]

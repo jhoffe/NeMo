@@ -35,10 +35,14 @@ from nemo.utils import logging
 
 if TYPE_CHECKING:
     from nemo.collections.asr.inference.itn.inverse_normalizer import AlignmentPreservingInverseNormalizer
-    from nemo.collections.asr.inference.pnc.punctuation_capitalizer import PunctuationCapitalizer
 
 
 class BaseBuilder:
+    """
+    Base Builder class.
+    Builds the ASR/ITN components.
+    Derived classes should implement the `build` method which should include the logic of creating concrete pipeline.
+    """
 
     @classmethod
     def _build_asr(cls, cfg: DictConfig, decoding_cfg: CTCDecodingConfig | RNNTDecodingConfig) -> ASRInferenceWrapper:
@@ -75,46 +79,9 @@ class BaseBuilder:
             compute_dtype=cfg.asr.compute_dtype,
             use_amp=cfg.asr.use_amp,
         )
+
+        logging.info(f"ASR model `{cfg.asr.model_name}` loaded")
         return asr_model
-
-    @classmethod
-    def _build_pnc(cls, cfg: DictConfig, asr_supports_pnc: bool) -> PunctuationCapitalizer | None:
-        """
-        Build the PNC model based on the config.
-        Args:
-            cfg: (DictConfig) Config
-            asr_supports_pnc: (bool) Whether the ASR model supports PNC
-        Returns:
-            (PunctuationCapitalizer | None) PNC model
-        """
-
-        pnc_model = None
-
-        if cfg.enable_pnc and asr_supports_pnc and not cfg.pnc.force_to_use_pnc_model:
-            # no need to load the PNC model if the ASR model already supports it
-            logging.info("Automatic punctuation is already supported by the ASR model.")
-            return pnc_model
-
-        if cfg.enable_pnc:
-
-            target_lang = getattr(cfg, "lang", getattr(cfg, "target_lang", None))
-            if target_lang is None:
-                raise ValueError("Language is not specified. Cannot load external PnC model.")
-
-            if target_lang == "en":
-                # Do not remove this import. It is used to avoid megatron import when automatic punctuation is disabled.
-                from nemo.collections.asr.inference.pnc.punctuation_capitalizer import PunctuationCapitalizer
-
-                pnc_model = PunctuationCapitalizer(
-                    model_name=cfg.pnc.model_name,
-                    device=cfg.pnc.device,
-                    device_id=cfg.pnc.device_id,
-                    compute_dtype=cfg.pnc.compute_dtype,
-                    use_amp=cfg.pnc.use_amp,
-                )
-            else:
-                logging.info(f"External automatic punctuation is not supported for language {target_lang}.")
-        return pnc_model
 
     @classmethod
     def _build_itn(cls, cfg: DictConfig, input_is_lower_cased: bool) -> AlignmentPreservingInverseNormalizer | None:
@@ -156,6 +123,9 @@ class BaseBuilder:
                 max_number_of_permutations_per_split=itn_cfg.max_number_of_permutations_per_split,
             )
             logging.info(f"Built inverse text normalizer with the input case: `{input_case}`.")
+
+        if itn_model is not None:
+            logging.info("ITN model loaded")
         return itn_model
 
     @classmethod

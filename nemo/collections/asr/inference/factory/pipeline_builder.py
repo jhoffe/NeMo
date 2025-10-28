@@ -25,6 +25,7 @@ from nemo.utils import logging
 
 
 class PipelineBuilder:
+    """Router for building the pipeline based on the pipeline type."""
 
     @staticmethod
     def set_matmul_precision(matmul_precision: str) -> None:

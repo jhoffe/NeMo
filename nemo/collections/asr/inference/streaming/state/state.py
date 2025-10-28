@@ -27,7 +27,6 @@ from nemo.collections.asr.inference.utils.text_segment import TextSegment, Word
 
 CLOSE_IN_TIME_TH = 2.0
 OVERLAP_SEARCH_TH = 3
-KEEP_LAST_N_WORDS = 30
 
 
 class StreamingState:
@@ -93,9 +92,6 @@ class StreamingState:
         self.word_alignment = []
         self.segments = []
         self.processed_segment_mask = []
-
-        # Used in PnC logic to keep the context before the response
-        self.context_before_response = []
 
         # Flag to indicate if EOU was detected before, used in merging logic
         self.eou_detected_before = False
@@ -236,12 +232,6 @@ class StreamingState:
         """
 
         if self.options.is_word_level_output():
-            if len(self.words) >= KEEP_LAST_N_WORDS:
-                self.context_before_response = self.words[-KEEP_LAST_N_WORDS:]
-            else:
-                self.context_before_response.extend(self.words)
-                self.context_before_response = self.context_before_response[-KEEP_LAST_N_WORDS:]
-
             self.words.clear()
             self.pnc_words.clear()
             self.itn_words.clear()

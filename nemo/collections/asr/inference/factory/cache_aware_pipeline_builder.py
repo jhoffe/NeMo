@@ -24,6 +24,10 @@ from nemo.utils import logging
 
 
 class CacheAwarePipelineBuilder(BaseBuilder):
+    """
+    Cache Aware Pipeline Builder class.
+    Builds the cache aware CTC/RNNT pipelines.
+    """
 
     @classmethod
     def build(cls, cfg: DictConfig) -> CacheAwareCTCPipeline | CacheAwareRNNTPipeline:
@@ -82,21 +86,12 @@ class CacheAwarePipelineBuilder(BaseBuilder):
         # building ASR model
         decoding_cfg = cls.get_rnnt_decoding_cfg()
         asr_model = cls._build_asr(cfg, decoding_cfg)
-        logging.info(f"ASR model `{cfg.asr.model_name}` loaded")
-
-        # building PnC model
-        asr_supports_pnc = asr_model.supports_punctuation()
-        pnc_model = cls._build_pnc(cfg, asr_supports_pnc=asr_supports_pnc)
-        if pnc_model is not None:
-            logging.info(f"PnC model `{cfg.pnc.model_name}` loaded")
 
         # building ITN model
         itn_model = cls._build_itn(cfg, input_is_lower_cased=True)
-        if itn_model is not None:
-            logging.info("ITN model loaded")
 
         # building cache aware RNNT pipeline
-        ca_rnnt_pipeline = CacheAwareRNNTPipeline(cfg, asr_model, pnc_model=pnc_model, itn_model=itn_model)
+        ca_rnnt_pipeline = CacheAwareRNNTPipeline(cfg, asr_model, itn_model=itn_model)
         logging.info(f"`{type(ca_rnnt_pipeline).__name__}` pipeline loaded")
         return ca_rnnt_pipeline
 
@@ -112,20 +107,11 @@ class CacheAwarePipelineBuilder(BaseBuilder):
         # building ASR model
         decoding_cfg = cls.get_ctc_decoding_cfg()
         asr_model = cls._build_asr(cfg, decoding_cfg)
-        logging.info(f"ASR model `{cfg.asr.model_name}` loaded")
-
-        # building PnC model
-        asr_supports_pnc = asr_model.supports_punctuation()
-        pnc_model = cls._build_pnc(cfg, asr_supports_pnc=asr_supports_pnc)
-        if pnc_model is not None:
-            logging.info(f"PnC model `{cfg.pnc.model_name}` loaded")
 
         # building ITN model
         itn_model = cls._build_itn(cfg, input_is_lower_cased=True)
-        if itn_model is not None:
-            logging.info("ITN model loaded")
 
         # building cache aware CTC pipeline
-        ca_ctc_pipeline = CacheAwareCTCPipeline(cfg, asr_model, pnc_model=pnc_model, itn_model=itn_model)
+        ca_ctc_pipeline = CacheAwareCTCPipeline(cfg, asr_model, itn_model=itn_model)
         logging.info(f"`{type(ca_ctc_pipeline).__name__}` pipeline loaded")
         return ca_ctc_pipeline

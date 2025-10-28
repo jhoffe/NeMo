@@ -11,23 +11,6 @@ asr:
   ngram_lm_alpha: 0.0                          # Alpha for language model
 
 
-# ========================================
-# Punctuation and Capitalization Configuration
-# ========================================
-pnc:
-  model_name: "punctuation_en_bert"            # Pre-trained PNC model from NGC/HuggingFace or local .nemo file path
-  device: "cuda"                               # Device for inference: 'cuda' or 'cpu'
-  device_id: 0                                 # GPU device ID
-  compute_dtype: bfloat16                      # Compute precision: 'bfloat16' for Ampere+, 'float16' for older GPUs, or 'float32'
-  use_amp: false                               # Enable Automatic Mixed Precision
-  left_padding_search_size: 45                 # Look-back window (#words) for punctuation context
-  batch_size: 128                              # Batch size for PnC model inference
-  max_seq_length: 64                           # Max sequence length processed at once
-  step: 8                                      # Sliding step size
-  margin: 16                                   # Overlap between windows to ensure smooth transitions
-  force_to_use_pnc_model: false                # Force use of BERT based PnC restoration model
-
-
 # ==========================================
 # Inverse Text Normalization Configuration
 # ==========================================
