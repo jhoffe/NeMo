@@ -28,17 +28,13 @@ def bpe_decoder():
         decoding_cfg=CTCDecodingConfig(),
         device="cuda" if torch.cuda.is_available() else "cpu",
     )
-    asr_model_cfg = asr_model.copy_asr_config()
-    window_stride = asr_model_cfg.preprocessor.window_stride
-    subsampling_factor = asr_model.get_subsampling_factor()
-    model_stride_in_secs = window_stride * subsampling_factor
     return BPEDecoder(
         vocabulary=asr_model.get_vocabulary(),
         tokenizer=asr_model.tokenizer,
         confidence_aggregator=min,
         asr_supported_puncts=asr_model.supported_punctuation(),
         word_boundary_tolerance=0.0,  # Set to 0.0 for easy testing
-        token_duration_in_secs=model_stride_in_secs,
+        token_duration_in_secs=asr_model.get_model_stride(in_secs=True),
     )
 
 

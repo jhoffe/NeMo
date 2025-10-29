@@ -26,9 +26,6 @@ class ProgressBar:
         Args:
             value: (float) Initial value.
             total: (float) Total value. Must be greater than zero.
-        Raises:
-            ValueError: If total is less than or equal to zero.
-            ValueError: If value is less than zero or greater than total.
         """
         if total <= 0:
             raise ValueError("Total must be greater than zero.")

@@ -4,7 +4,6 @@ The `asr_streaming_infer.py` script enables streaming inference for both buffere
 
 Beyond streaming ASR, the script also supports:
 
-* **Punctuation and Capitalization**
 * **Inverse Text Normalization (ITN)**
 * **End-of-Utterance (EoU) Detection**
 * **Word-level and Segment-level Output**
