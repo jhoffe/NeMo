@@ -17,6 +17,7 @@ import random
 import numpy as np
 import torch
 import torch.nn as nn
+import matplotlib.pyplot as plt
 
 from nemo.core.classes import Typing, typecheck
 from nemo.core.neural_types import LengthsType, NeuralType, SpectrogramType
@@ -51,14 +52,14 @@ class SpecAugment(nn.Module, Typing):
     def input_types(self):
         """Returns definitions of module input types"""
         return {
-            "input_spec": NeuralType(('B', 'D', 'T'), SpectrogramType()),
-            "length": NeuralType(tuple('B'), LengthsType()),
+            "input_spec": NeuralType(("B", "D", "T"), SpectrogramType()),
+            "length": NeuralType(tuple("B"), LengthsType()),
         }
 
     @property
     def output_types(self):
         """Returns definitions of module output types"""
-        return {"augmented_spec": NeuralType(('B', 'D', 'T'), SpectrogramType())}
+        return {"augmented_spec": NeuralType(("B", "D", "T"), SpectrogramType())}
 
     def __init__(
         self,
@@ -87,7 +88,9 @@ class SpecAugment(nn.Module, Typing):
             self.adaptive_temporal_width = False
         else:
             if time_width > 1.0 or time_width < 0.0:
-                raise ValueError("If `time_width` is a float value, must be in range [0, 1]")
+                raise ValueError(
+                    "If `time_width` is a float value, must be in range [0, 1]"
+                )
 
             self.adaptive_temporal_width = True
 
@@ -131,7 +134,9 @@ class SpecAugment(nn.Module, Typing):
         masked_spec = input_spec.masked_fill(mask=fill_mask, value=self.mask_value)
         return masked_spec
 
-    def _forward_vectorized(self, input_spec: torch.Tensor, length: torch.Tensor) -> torch.Tensor:
+    def _forward_vectorized(
+        self, input_spec: torch.Tensor, length: torch.Tensor
+    ) -> torch.Tensor:
         # time masks
         input_spec = self._apply_masks(
             input_spec=input_spec,
@@ -150,6 +155,25 @@ class SpecAugment(nn.Module, Typing):
             axis=self.FREQ_AXIS,
             mask_value=self.mask_value,
         )
+
+        # plot and save each spectrogram in the batch
+        lengths_cpu = length.cpu().numpy()
+        for idx in range(input_spec.shape[0]):
+            spec_np = input_spec[idx].detach().cpu().numpy()  # shape (freq, time)
+            time_len = int(lengths_cpu[idx]) if length is not None else spec_np.shape[1]
+            spec_np = spec_np[:, :time_len]
+
+            plt.figure(figsize=(10, 4))
+            plt.imshow(spec_np, aspect="auto", origin="lower")
+            plt.colorbar()
+            plt.xlabel("Time")
+            plt.ylabel("Frequency")
+            plt.title(f"Spectrogram_{idx}")
+            plt.tight_layout()
+            rand_id = format(self._rng.getrandbits(32), "08x")
+            plt.savefig(f"spectrogram_{idx}_{rand_id}.png", dpi=150)
+            plt.close()
+
         return input_spec
 
     def _apply_masks(
@@ -161,16 +185,17 @@ class SpecAugment(nn.Module, Typing):
         mask_value: float,
         axis: int,
     ) -> torch.Tensor:
-
         assert axis in (
             self.FREQ_AXIS,
             self.TIME_AXIS,
-        ), f"Axis can be only be equal to frequency \
+        ), (
+            f"Axis can be only be equal to frequency \
             ({self.FREQ_AXIS}) or time ({self.TIME_AXIS}). Received: {axis=}"
-        assert not (
-            isinstance(width, float) and axis == self.FREQ_AXIS
-        ), "Float width supported \
+        )
+        assert not (isinstance(width, float) and axis == self.FREQ_AXIS), (
+            "Float width supported \
             only with time axis."
+        )
 
         batch_size = input_spec.shape[0]
         axis_length = input_spec.shape[axis]
@@ -181,9 +206,16 @@ class SpecAugment(nn.Module, Typing):
 
         # Generate [0-1) random numbers and then scale the tensors.
         # Use float32 dtype for begin/end mask markers before they are quantized to long.
-        mask_width = torch.rand((batch_size, num_masks), device=input_spec.device, dtype=torch.float32) * width
+        mask_width = (
+            torch.rand(
+                (batch_size, num_masks), device=input_spec.device, dtype=torch.float32
+            )
+            * width
+        )
         mask_width = mask_width.long()
-        mask_start = torch.rand((batch_size, num_masks), device=input_spec.device, dtype=torch.float32)
+        mask_start = torch.rand(
+            (batch_size, num_masks), device=input_spec.device, dtype=torch.float32
+        )
 
         if axis == self.TIME_AXIS:
             # length can only be used for the time axis
@@ -198,7 +230,9 @@ class SpecAugment(nn.Module, Typing):
         indices = torch.arange(axis_length, device=input_spec.device)
         # Create a mask_tensor with all the indices.
         # The mask_tensor shape is (batch_size, num_masks, axis_length).
-        mask_tensor = (indices >= mask_start.unsqueeze(-1)) & (indices < mask_end.unsqueeze(-1))
+        mask_tensor = (indices >= mask_start.unsqueeze(-1)) & (
+            indices < mask_end.unsqueeze(-1)
+        )
 
         # Reduce masks to one mask
         mask_tensor = mask_tensor.any(dim=1)
@@ -229,12 +263,12 @@ class SpecCutout(nn.Module, Typing):
     @property
     def input_types(self):
         """Returns definitions of module input types"""
-        return {"input_spec": NeuralType(('B', 'D', 'T'), SpectrogramType())}
+        return {"input_spec": NeuralType(("B", "D", "T"), SpectrogramType())}
 
     @property
     def output_types(self):
         """Returns definitions of module output types"""
-        return {"augmented_spec": NeuralType(('B', 'D', 'T'), SpectrogramType())}
+        return {"augmented_spec": NeuralType(("B", "D", "T"), SpectrogramType())}
 
     def __init__(self, rect_masks=0, rect_time=5, rect_freq=20, rng=None):
         super(SpecCutout, self).__init__()
