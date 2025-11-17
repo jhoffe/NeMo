@@ -606,7 +606,7 @@ class AudioToMelSpectrogramWithPitchShiftPreprocessor(AudioPreprocessor, Exporta
         return signals, lengths
 
     def get_features(self, input_signal, length):
-        if random.random() < self.pitch_shift_p:
+        if self.training and random.random() < self.pitch_shift_p:
             input_signal, length = self.pitch_shifter(input_signal, length)
 
         return self.featurizer(input_signal, length)
