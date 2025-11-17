@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import dataclasses
 import math
 import random
 from abc import ABC, abstractmethod
@@ -1097,7 +1098,9 @@ class AudioToMelSpectrogramWithPitchShiftPreprocessorConfig:
     )
     sample_rate: int = 16000
     pitch_shift_p: float = 0.5
-    steps_p: list[tuple[int, float]] = [(4, 0.5), (-4, 0.5)]
+    steps_p: list[tuple[int, float]] = dataclasses.field(
+        default_factory=lambda: [(4, 0.5), (-4, 0.5)]
+    )
     window_size: float = 0.02
     window_stride: float = 0.01
     n_window_size: Optional[int] = None
