@@ -406,6 +406,8 @@ class AudioToMelSpectrogramWithPitchShiftPreprocessor(AudioPreprocessor, Exporta
     Args:
         sample_rate (int): Sample rate of the input audio data.
             Defaults to 16000
+        pitch_shift_p (float): Probability of applying pitch shift.
+            Defaults to 0.5
         steps_p (list[tuple[int, float]]): List of tuples where each tuple contains the number of steps to shift the pitch and its associated probability.
             Defaults to [(4, 0.5), (-4, 0.5)].
         window_size (float): Size of window for fft in seconds
@@ -508,6 +510,7 @@ class AudioToMelSpectrogramWithPitchShiftPreprocessor(AudioPreprocessor, Exporta
     def __init__(
         self,
         sample_rate=16000,
+        pitch_shift_p: float = 0.5,
         steps_p=[(4, 0.5), (-4, 0.5)],
         window_size=0.02,
         window_stride=0.01,
@@ -588,6 +591,7 @@ class AudioToMelSpectrogramWithPitchShiftPreprocessor(AudioPreprocessor, Exporta
         )
 
         self.pitch_shifter = AudioPitchShiftPreprocessor(steps_p=steps_p)
+        self.pitch_shift_p = pitch_shift_p
 
     def input_example(
         self, max_batch: int = 8, max_dim: int = 32000, min_length: int = 200
@@ -602,7 +606,9 @@ class AudioToMelSpectrogramWithPitchShiftPreprocessor(AudioPreprocessor, Exporta
         return signals, lengths
 
     def get_features(self, input_signal, length):
-        input_signal, length = self.pitch_shifter(input_signal, length)
+        if random.random() < self.pitch_shift_p:
+            input_signal, length = self.pitch_shifter(input_signal, length)
+
         return self.featurizer(input_signal, length)
 
     @property
@@ -1090,6 +1096,7 @@ class AudioToMelSpectrogramWithPitchShiftPreprocessorConfig:
         "nemo.collections.asr.modules.AudioToMelSpectrogramWithPitchShiftPreprocessor"
     )
     sample_rate: int = 16000
+    pitch_shift_p: float = 0.5
     steps_p: list[tuple[int, float]] = [(4, 0.5), (-4, 0.5)]
     window_size: float = 0.02
     window_stride: float = 0.01
