@@ -83,6 +83,10 @@ class SpecAugment(nn.Module, Typing):
         self.mask_value = mask_value
         self.use_vectorized_code = use_vectorized_code
 
+        print(
+            f"freq_masks: {self.freq_masks}, time_masks: {self.time_masks}, freq_width: {self.freq_width}, time_width: {self.time_width}"
+        )
+
         if isinstance(time_width, int):
             self.adaptive_temporal_width = False
         else:
