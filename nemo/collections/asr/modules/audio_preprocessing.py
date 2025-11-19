@@ -21,6 +21,7 @@ from typing import Any, Optional
 
 import torch
 from packaging import version
+from loguru import logger
 
 from nemo.collections.asr.parts.numba.spec_augment import (
     SpecAugmentNumba,
@@ -193,6 +194,7 @@ class AudioPitchShiftPreprocessor(AudioPreprocessor):
         )[0](x)
 
     def get_features(self, input_signal, length):
+        logger.debug("Applying pitch shift")
         features = self.featurizer(input_signal)
         return features, length
 
