@@ -181,6 +181,28 @@ class EncDecRNNTModel(
                 f"Changed SpecAugment module to \n{OmegaConf.to_yaml(spec_augment_cfg)}"
             )
 
+    def change_preprocessor(self, preprocessor_cfg: Optional[DictConfig] = None):
+        """
+        Changes preprocessor module used during training and inference.
+
+        Args:
+            preprocessor_cfg: A config for the preprocessor module.
+                If None is passed, preprocessor is disabled.
+        Returns: None
+
+        """
+
+        if preprocessor_cfg is None:
+            self.preprocessor = None
+            self.cfg.preprocessor = None
+            logging.info("Disabled Preprocessor module.")
+        else:
+            self.preprocessor = EncDecRNNTModel.from_config_dict(preprocessor_cfg)
+            self.cfg.preprocessor = preprocessor_cfg
+            logging.info(
+                f"Changed Preprocessor module to \n{OmegaConf.to_yaml(preprocessor_cfg)}"
+            )
+
     def setup_optim_normalization(self):
         """
         Helper method to setup normalization of certain parts of the model prior to the optimization step.
