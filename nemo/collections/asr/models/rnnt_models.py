@@ -198,7 +198,7 @@ class EncDecRNNTModel(
             logging.info("Disabled Preprocessor module.")
         else:
             self.preprocessor = EncDecRNNTModel.from_config_dict(preprocessor_cfg).to(
-                self.trainer.device
+                self.device
             )
             self.cfg.preprocessor = preprocessor_cfg
             logging.info(
