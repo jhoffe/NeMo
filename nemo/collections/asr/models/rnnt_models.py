@@ -159,6 +159,28 @@ class EncDecRNNTModel(
         # Setup encoder adapters (from ASRAdapterModelMixin)
         self.setup_adapters()
 
+    def change_spec_augment(self, spec_augment_cfg: Optional[DictConfig] = None):
+        """
+        Changes spec augmentation module used during training.
+
+        Args:
+            spec_augment_cfg: A config for the spec augmentation module.
+                If None is passed, spec augmentation is disabled.
+
+        Returns: None
+
+        """
+        if spec_augment_cfg is None:
+            self.spec_augmentation = None
+            self.cfg.spec_augment = None
+            logging.info("Disabled SpecAugment module.")
+        else:
+            self.spec_augmentation = EncDecRNNTModel.from_config_dict(spec_augment_cfg)
+            self.cfg.spec_augment = spec_augment_cfg
+            logging.info(
+                f"Changed SpecAugment module to \n{OmegaConf.to_yaml(spec_augment_cfg)}"
+            )
+
     def setup_optim_normalization(self):
         """
         Helper method to setup normalization of certain parts of the model prior to the optimization step.
