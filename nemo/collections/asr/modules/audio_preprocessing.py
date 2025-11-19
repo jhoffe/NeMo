@@ -179,15 +179,15 @@ class AudioPitchShiftPreprocessor(AudioPreprocessor):
 
         assert sum(p for _, p in steps_p) == 1.0, "Probabilities must sum to 1.0"
 
-        self.featurizers = []
-        self.steps = []
-        for n_steps, p in steps_p:
-            self.featurizers.append(
+        self.featurizers = torch.nn.ModuleList(
+            [
                 torchaudio.transforms.PitchShift(
                     sample_rate=self._sample_rate, n_steps=n_steps
                 )
-            )
-            self.steps.append((n_steps, p))
+                for n_steps, _ in steps_p
+            ]
+        )
+        self.steps = [(n_steps, p) for n_steps, p in steps_p]
 
     def get_features(self, input_signal, length):
         featurizer = random.choices(
