@@ -160,22 +160,24 @@ class SpecAugment(nn.Module, Typing):
         )
 
         # plot and save each spectrogram in the batch
-        # lengths_cpu = length.cpu().numpy()
-        # for idx in range(input_spec.shape[0]):
-        #     spec_np = input_spec[idx].detach().cpu().numpy()  # shape (freq, time)
-        #     time_len = int(lengths_cpu[idx]) if length is not None else spec_np.shape[1]
-        #     spec_np = spec_np[:, :time_len]
+        import matplotlib.pyplot as plt
 
-        #     plt.figure(figsize=(10, 4))
-        #     plt.imshow(spec_np, aspect="auto", origin="lower")
-        #     plt.colorbar()
-        #     plt.xlabel("Time")
-        #     plt.ylabel("Frequency")
-        #     plt.title(f"Spectrogram_{idx}")
-        #     plt.tight_layout()
-        #     rand_id = format(self._rng.getrandbits(32), "08x")
-        #     plt.savefig(f"spectrogram_{idx}_{rand_id}.png", dpi=150)
-        #     plt.close()
+        lengths_cpu = length.cpu().numpy()
+        for idx in range(input_spec.shape[0]):
+            spec_np = input_spec[idx].detach().cpu().numpy()  # shape (freq, time)
+            time_len = int(lengths_cpu[idx]) if length is not None else spec_np.shape[1]
+            spec_np = spec_np[:, :time_len]
+
+            plt.figure(figsize=(10, 4))
+            plt.imshow(spec_np, aspect="auto", origin="lower")
+            plt.colorbar()
+            plt.xlabel("Time")
+            plt.ylabel("Frequency")
+            plt.title(f"Spectrogram_{idx}")
+            plt.tight_layout()
+            rand_id = format(self._rng.getrandbits(32), "08x")
+            plt.savefig(f"specs/spectrogram_{idx}_{rand_id}.png", dpi=150)
+            plt.close()
 
         return input_spec
 
