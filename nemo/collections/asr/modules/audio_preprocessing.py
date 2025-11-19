@@ -824,10 +824,6 @@ class SpectrogramAugmentation(NeuralModule):
     ):
         super().__init__()
 
-        print(
-            f"freq_masks: {freq_masks}, time_masks: {time_masks}, freq_width: {freq_width}, time_width: {time_width}"
-        )
-
         if rect_masks > 0:
             self.spec_cutout = SpecCutout(
                 rect_masks=rect_masks,
@@ -869,6 +865,10 @@ class SpectrogramAugmentation(NeuralModule):
 
     @typecheck()
     def forward(self, input_spec, length):
+        print(
+            f"freq_masks: {self.spec_augment.freq_masks}, time_masks: {self.spec_augment.time_masks}, freq_width: {self.spec_augment.freq_width}, time_width: {self.spec_augment.time_width}"
+        )
+
         augmented_spec = self.spec_cutout(input_spec=input_spec)
 
         # To run the Numba kernel, correct numba version is required as well as
