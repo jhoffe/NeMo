@@ -814,8 +814,6 @@ class EncDecRNNTModel(
             )
 
         if not has_processed_signal:
-            print(f"Preprocessor type: {type(self.preprocessor)}")
-
             processed_signal, processed_signal_length = self.preprocessor(
                 input_signal=input_signal,
                 length=input_signal_length,
