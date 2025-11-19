@@ -190,11 +190,9 @@ class AudioPitchShiftPreprocessor(AudioPreprocessor):
             self.steps.append((n_steps, p))
 
     def get_features(self, input_signal, length):
-        logger.info("Applying pitch shift")
-
         featurizer = random.choices(
             self.featurizers, weights=[p for _, p in self.steps]
-        )
+        )[0]
 
         features = featurizer(input_signal)
         return features, length
