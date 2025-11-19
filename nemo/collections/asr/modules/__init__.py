@@ -14,13 +14,17 @@
 
 from nemo.collections.asr.modules.audio_preprocessing import (
     AudioToMelSpectrogramPreprocessor,
+    AudioToMelSpectrogramWithPitchShiftPreprocessor,
     AudioToMFCCPreprocessor,
     CropOrPadSpectrogramAugmentation,
     MaskedPatchAugmentation,
     SpectrogramAugmentation,
 )
 from nemo.collections.asr.modules.beam_search_decoder import BeamSearchDecoderWithLM
-from nemo.collections.asr.modules.conformer_encoder import ConformerEncoder, ConformerEncoderAdapter
+from nemo.collections.asr.modules.conformer_encoder import (
+    ConformerEncoder,
+    ConformerEncoderAdapter,
+)
 from nemo.collections.asr.modules.conv_asr import (
     ConvASRDecoder,
     ConvASRDecoderClassification,
@@ -43,7 +47,10 @@ from nemo.collections.asr.modules.rnnt import (
     SampledRNNTJoint,
     StatelessTransducerDecoder,
 )
-from nemo.collections.asr.modules.squeezeformer_encoder import SqueezeformerEncoder, SqueezeformerEncoderAdapter
+from nemo.collections.asr.modules.squeezeformer_encoder import (
+    SqueezeformerEncoder,
+    SqueezeformerEncoderAdapter,
+)
 from nemo.collections.asr.modules.ssl_modules import (
     ConformerMultiLayerFeatureExtractor,
     ConformerMultiLayerFeaturePreprocessor,
