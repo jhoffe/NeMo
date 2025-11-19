@@ -155,6 +155,10 @@ class SpecAugment(nn.Module, Typing):
             mask_value=self.mask_value,
         )
 
+        print(
+            f"time masks: {self.time_masks}, freq masks: {self.freq_masks}, time width: {self.time_width}, freq width: {self.freq_width}"
+        )
+
         # plot and save each spectrogram in the batch
         # lengths_cpu = length.cpu().numpy()
         # for idx in range(input_spec.shape[0]):
