@@ -197,7 +197,9 @@ class EncDecRNNTModel(
             self.cfg.preprocessor = None
             logging.info("Disabled Preprocessor module.")
         else:
-            self.preprocessor = EncDecRNNTModel.from_config_dict(preprocessor_cfg)
+            self.preprocessor = EncDecRNNTModel.from_config_dict(preprocessor_cfg).to(
+                self.trainer.device
+            )
             self.cfg.preprocessor = preprocessor_cfg
             logging.info(
                 f"Changed Preprocessor module to \n{OmegaConf.to_yaml(preprocessor_cfg)}"
