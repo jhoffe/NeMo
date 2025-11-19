@@ -194,7 +194,7 @@ class AudioPitchShiftPreprocessor(AudioPreprocessor):
         )[0](x)
 
     def get_features(self, input_signal, length):
-        logger.debug("Applying pitch shift")
+        logger.info("Applying pitch shift")
         features = self.featurizer(input_signal)
         return features, length
 
