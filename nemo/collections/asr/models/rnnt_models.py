@@ -77,6 +77,7 @@ class EncDecRNNTModel(
         super().__init__(cfg=cfg, trainer=trainer)
 
         # Initialize components
+        print(self.cfg.preprocessor)
         self.preprocessor = EncDecRNNTModel.from_config_dict(self.cfg.preprocessor)
 
         self.encoder = EncDecRNNTModel.from_config_dict(self.cfg.encoder)
