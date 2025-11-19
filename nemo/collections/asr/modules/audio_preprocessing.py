@@ -189,13 +189,14 @@ class AudioPitchShiftPreprocessor(AudioPreprocessor):
             )
             self.steps.append((n_steps, p))
 
-        self.featurizer = lambda x: random.choices(
-            self.featurizers, weights=[p for _, p in self.steps]
-        )[0](x)
-
     def get_features(self, input_signal, length):
         logger.info("Applying pitch shift")
-        features = self.featurizer(input_signal)
+
+        featurizer = random.choices(
+            self.featurizers, weights=[p for _, p in self.steps]
+        )
+
+        features = featurizer(input_signal)
         return features, length
 
 
@@ -610,7 +611,7 @@ class AudioToMelSpectrogramWithPitchShiftPreprocessor(AudioPreprocessor, Exporta
 
     def get_features(self, input_signal, length):
         if self.training and random.random() < self.pitch_shift_p:
-            input_signal, length = self.pitch_shifter(input_signal, length)
+            input_signal, length = self.pitch_shifter.get_features(input_signal, length)
 
         return self.featurizer(input_signal, length)
 
