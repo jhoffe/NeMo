@@ -854,6 +854,7 @@ class SpectrogramAugmentation(NeuralModule):
                 use_vectorized_code=use_vectorized_spec_augment,
             )
         else:
+            print("NO AUGMENT")
             self.spec_augment = lambda input_spec, length: input_spec
 
         # Check if numba is supported, and use a Numba kernel if it is
