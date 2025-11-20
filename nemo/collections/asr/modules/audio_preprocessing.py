@@ -197,6 +197,8 @@ class AudioPitchShiftPreprocessor(AudioPreprocessor):
             self.featurizers, weights=[p for _, p in self.steps]
         )[0]
 
+        print(featurizer)
+
         features = featurizer(input_signal)
         return features, length
 
@@ -826,6 +828,8 @@ class SpectrogramAugmentation(NeuralModule):
     ):
         super().__init__()
 
+        print(freq_masks, time_masks)
+
         if rect_masks > 0:
             self.spec_cutout = SpecCutout(
                 rect_masks=rect_masks,
@@ -867,6 +871,7 @@ class SpectrogramAugmentation(NeuralModule):
 
     @typecheck()
     def forward(self, input_spec, length):
+        print("Test")
         augmented_spec = self.spec_cutout(input_spec=input_spec)
 
         # To run the Numba kernel, correct numba version is required as well as
