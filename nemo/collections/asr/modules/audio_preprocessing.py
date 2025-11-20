@@ -21,7 +21,6 @@ from typing import Any, Optional
 
 import torch
 from packaging import version
-from loguru import logger
 
 from nemo.collections.asr.parts.numba.spec_augment import (
     SpecAugmentNumba,
@@ -196,8 +195,6 @@ class AudioPitchShiftPreprocessor(AudioPreprocessor):
         featurizer = random.choices(
             self.featurizers, weights=[p for _, p in self.steps]
         )[0]
-
-        print(featurizer)
 
         features = featurizer(input_signal)
         return features, length
@@ -828,11 +825,6 @@ class SpectrogramAugmentation(NeuralModule):
     ):
         super().__init__()
 
-        print(f"freq_masks: {freq_masks}")
-        print(f"time_masks: {time_masks}")
-        print(f"freq_width: {freq_width}")
-        print(f"time_width: {time_width}")
-
         if rect_masks > 0:
             self.spec_cutout = SpecCutout(
                 rect_masks=rect_masks,
@@ -854,7 +846,6 @@ class SpectrogramAugmentation(NeuralModule):
                 use_vectorized_code=use_vectorized_spec_augment,
             )
         else:
-            print("NO AUGMENT")
             self.spec_augment = lambda input_spec, length: input_spec
 
         # Check if numba is supported, and use a Numba kernel if it is
@@ -875,7 +866,6 @@ class SpectrogramAugmentation(NeuralModule):
 
     @typecheck()
     def forward(self, input_spec, length):
-        print("Test")
         augmented_spec = self.spec_cutout(input_spec=input_spec)
 
         # To run the Numba kernel, correct numba version is required as well as
