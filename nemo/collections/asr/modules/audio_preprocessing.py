@@ -828,7 +828,10 @@ class SpectrogramAugmentation(NeuralModule):
     ):
         super().__init__()
 
-        print(freq_masks, time_masks)
+        print(f"freq_masks: {freq_masks}")
+        print(f"time_masks: {time_masks}")
+        print(f"freq_width: {freq_width}")
+        print(f"time_width: {time_width}")
 
         if rect_masks > 0:
             self.spec_cutout = SpecCutout(
