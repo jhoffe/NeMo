@@ -178,6 +178,7 @@ class CallbackParams:
     postfix: str = ".nemo"
     save_best_model: bool = False
     always_save_nemo: bool = False
+    min_epochs: int = 0
     # Whether to automatically save .nemo file durin on_train_end hook
     save_nemo_on_train_end: Optional[bool] = True
     # tensor parallel size * pipeline parallel size
