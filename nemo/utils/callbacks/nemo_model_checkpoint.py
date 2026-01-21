@@ -304,6 +304,8 @@ class NeMoModelCheckpoint(ModelCheckpoint):
         """
         Save the checkpoint on train end.
         """
+        logging.info("DINGDONG MOTHERFUCKER")
+
         if trainer.fast_dev_run:
             return None
 
