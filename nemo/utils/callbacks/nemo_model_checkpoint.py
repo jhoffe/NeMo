@@ -240,6 +240,8 @@ class NeMoModelCheckpoint(ModelCheckpoint):
         """
         Save the checkpoint.
         """
+        logging.info("DINGDONG MOTHERFUCKER2")
+
         output = super().on_save_checkpoint(trainer, pl_module, checkpoint)
         if not self.always_save_nemo:
             return output
