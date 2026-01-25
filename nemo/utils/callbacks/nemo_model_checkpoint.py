@@ -69,7 +69,6 @@ class NeMoModelCheckpoint(ModelCheckpoint):
         self.always_save_nemo = always_save_nemo
         self.save_nemo_on_train_end = save_nemo_on_train_end
         self.save_best_model = save_best_model
-        self.min_epochs = min_epochs
         self.save_last_n_optim_states = save_last_n_optim_states
         if self.save_best_model and not self.save_nemo_on_train_end:
             logging.warning(
@@ -88,6 +87,7 @@ class NeMoModelCheckpoint(ModelCheckpoint):
         # that `self._remove_checkpoint` adds to. Once `self._save_checkpoint`
         # is called, the last element is frozen and a new element is added.
         self.deferred_ckpts_to_remove: List[List[str]] = []
+        self.min_epochs = min_epochs
 
         # `prefix` is deprecated
         if "prefix" in kwargs:
@@ -101,6 +101,11 @@ class NeMoModelCheckpoint(ModelCheckpoint):
         if self.save_top_k != -1 and n_resume:
             logging.debug("Checking previous runs")
             self.nemo_topk_check_previous_run()
+
+    def _should_skip_saving_checkpoint(self, trainer) -> bool:
+        return (
+            self.min_epochs > 0 and trainer.current_epoch < self.min_epochs
+        ) or super()._should_skip_saving_checkpoint(trainer)
 
     def nemo_topk_check_previous_run(self):
         """
@@ -240,8 +245,6 @@ class NeMoModelCheckpoint(ModelCheckpoint):
         """
         Save the checkpoint.
         """
-        logging.info("DINGDONG MOTHERFUCKER2")
-
         output = super().on_save_checkpoint(trainer, pl_module, checkpoint)
         if not self.always_save_nemo:
             return output
@@ -266,7 +269,7 @@ class NeMoModelCheckpoint(ModelCheckpoint):
         else:
             maybe_injected_best_model_path = self.best_model_path
 
-        if self.save_best_model and trainer.current_epoch >= self.min_epochs:
+        if self.save_best_model:
             if not os.path.exists(maybe_injected_best_model_path):
                 return
 
@@ -306,8 +309,6 @@ class NeMoModelCheckpoint(ModelCheckpoint):
         """
         Save the checkpoint on train end.
         """
-        logging.info("DINGDONG MOTHERFUCKER")
-
         if trainer.fast_dev_run:
             return None
 
